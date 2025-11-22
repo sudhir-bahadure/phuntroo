@@ -4,19 +4,7 @@ import compression from 'vite-plugin-compression'
 
 export default defineConfig({
     plugins: [
-        react(),
-        // Generate brotli compressed files
-        compression({
-            algorithm: 'brotliCompress',
-            ext: '.br',
-            threshold: 10240
-        }),
-        // Generate gzip compressed files
-        compression({
-            algorithm: 'gzip',
-            ext: '.gz',
-            threshold: 10240
-        })
+        react()
     ],
     server: {
         port: 5173,
@@ -47,13 +35,6 @@ export default defineConfig({
                 }
             }
         },
-        chunkSizeWarningLimit: 2000,
-        minify: 'terser',
-        terserOptions: {
-            compress: {
-                drop_console: true,
-                drop_debugger: true
-            }
-        }
+        chunkSizeWarningLimit: 2000
     }
 })
