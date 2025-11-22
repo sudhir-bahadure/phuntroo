@@ -1,0 +1,12 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "PHUNTROO Dev Server",
+            "type": "shell",
+            "command": "powershell -ExecutionPolicy Bypass -File D:/Jarvis-main/run-phuntroo.ps1",
+            "isBackground": true,
+            "problemMatcher": []
+        }
+    ]
+}

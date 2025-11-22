@@ -1,0 +1,274 @@
+[
+    {
+        "role": "user",
+        "content": "How are you?"
+    },
+    {
+        "role": "assistant",
+        "content": "I'm doing great, thanks for asking! I'm ready to assist you with any questions or topics you'd like to discuss."
+    },
+    {
+        "role": "user",
+        "content": "Do you know justin bieber"
+    },
+    {
+        "role": "assistant",
+        "content": "Justin Bieber is a Canadian singer, songwriter, and record producer. He was born on March 1, 1994, and rose to fame as a teenager with his debut single \"One Time\" in 2009."
+    },
+    {
+        "role": "user",
+        "content": "Who am i?"
+    },
+    {
+        "role": "assistant",
+        "content": "You are Sourav Sec."
+    },
+    {
+        "role": "user",
+        "content": "Oh it's not assisi it's suck"
+    },
+    {
+        "role": "assistant",
+        "content": "You meant to say \"sec\" not \"suck\", right? You are Sourav Sec."
+    },
+    {
+        "role": "user",
+        "content": "Who is the prime minister of pakistan?"
+    },
+    {
+        "role": "assistant",
+        "content": "As of my knowledge cutoff in 2025, the Prime Minister of Pakistan is Anwar ul Haq Kakar."
+    },
+    {
+        "role": "user",
+        "content": "What is the currency of south africa?"
+    },
+    {
+        "role": "assistant",
+        "content": "The currency of South Africa is the South African Rand (ZAR)."
+    },
+    {
+        "role": "user",
+        "content": "Cool"
+    },
+    {
+        "role": "assistant",
+        "content": "Glad you think so!"
+    },
+    {
+        "role": "user",
+        "content": "Do you know hindi"
+    },
+    {
+        "role": "assistant",
+        "content": "I can understand and respond to basic Hindi phrases and sentences, but I'm not fluent in Hindi."
+    },
+    {
+        "role": "user",
+        "content": "Talk in hindi"
+    },
+    {
+        "role": "assistant",
+        "content": "Namaste! Mera naam Jarvis hai. Main aapki kuchh madad kar sakta hoon."
+    },
+    {
+        "role": "user",
+        "content": "Tell me about shahrukh khan"
+    },
+    {
+        "role": "assistant",
+        "content": "Shah Rukh Khan is a renowned Indian film actor, producer, and television personality. He is often referred to as the \"King of Bollywood\" and has appeared in over 80 Bollywood films. Born on November 2, 1965, he has won numerous awards, including 14 Filmfare Awards."
+    },
+    {
+        "role": "user",
+        "content": "Give lyrics of hanuman chalisa"
+    },
+    {
+        "role": "assistant",
+        "content": "Here are the lyrics to the Hanuman Chalisa:\n\nJai Hanuman gyan gun sagar\nJai Kapis tihun lok ujagar\n\nRam doot atulit bal dhama\nAnjaani-putra Pavan sut nama\n\nMahavir Vikram Bajrangi\nKumati nivar sumati Ke sangi\n\nKanchan varan viraj subesa\nKanan kundal kunchit kesa\n\nHath vajra ao dhwaja birajai\nSankar sukhwana kahu mori pai\n\nTihu lok sankar siyave\nKaju nisichar nayi ur laye\n\nAsur nikandan Ram dulare\nRamashray sarva ke sukhi sare\n\nAyodhya vihar agaman nirmana\nRam milayi rajpad deenha\n\nLakshman prachod dashrath kaje\nSita man bhaya ikichaaje\n\nSita Ram charit suhaaye\nSukh kari kahu mori pai\n\nAshta sidhi nav nidhi ke\nData ram das rakhwale\n\nSankat mochan nau avtara\nSri Ram jee ke sara\n\nSri Ram jee ke sara\nSri Ram jee ke sara\nSri Ram jee ke sara\n\nTihu lok hanumat jalaya\nSri Ram jee ke sara\n\nJai jai jai hanuman gosai\nKripa karahu gurudev ki nayi\n\nJo sat bar path kare koi\nChute bandi maha sukha hoi\n\nJo yah par hai hanuman chalisa\nHoye siddhi sakhi gaureesa\n\nTihu lok hanumat yasha\nSri Ram jee ke sara\n\nSri Ram jee ke sara\nSri Ram jee ke sara\nSri Ram jee ke sara"
+    },
+    {
+        "role": "user",
+        "content": "How are you?"
+    },
+    {
+        "role": "assistant",
+        "content": "I'm doing great, thanks for asking!"
+    },
+    {
+        "role": "user",
+        "content": "Do you generate image for me"
+    },
+    {
+        "role": "assistant",
+        "content": "I can generate simple text-based images using ASCII art, but I'm not capable of generating complex images like photographs or graphics. If you have a specific request for an ASCII art image, I can try to create it for you!"
+    },
+    {
+        "role": "user",
+        "content": "Okay generator"
+    },
+    {
+        "role": "assistant",
+        "content": "Here's a simple ASCII art generator. What would you like me to generate an image of? (e.g. cat, dog, house, etc.)"
+    },
+    {
+        "role": "user",
+        "content": "House"
+    },
+    {
+        "role": "assistant",
+        "content": "Here's a simple ASCII art house:\n\n\n_______\n|       |\n|  __  |\n| /  \\ |\n| |  | |\n| |__| |\n|_____|\n \n\nHow's that?"
+    },
+    {
+        "role": "user",
+        "content": "How are you?"
+    },
+    {
+        "role": "assistant",
+        "content": "I'm doing great, thanks for asking!"
+    },
+    {
+        "role": "user",
+        "content": "What do you know about me?"
+    },
+    {
+        "role": "assistant",
+        "content": "I know that your name is Sourav Sec. That's about all the personal information I have about you."
+    },
+    {
+        "role": "user",
+        "content": "I am 21 years old"
+    },
+    {
+        "role": "assistant",
+        "content": "Now I know that you're 21 years old, and your name is Sourav Sec."
+    },
+    {
+        "role": "user",
+        "content": "How many years old are you?"
+    },
+    {
+        "role": "assistant",
+        "content": "I'm an AI, I don't have a physical body, so I don't have an age. I was created to assist and provide information, and I don't experience time in the same way humans do."
+    },
+    {
+        "role": "user",
+        "content": "Do you know bhuvan bam"
+    },
+    {
+        "role": "assistant",
+        "content": "Bhuvan Bam is a popular Indian YouTuber and comedian, known for his channel BB Ki Vines. He is famous for his humorous and relatable content, often creating characters and skits that resonate with the Indian youth."
+    },
+    {
+        "role": "user",
+        "content": "Do you know about dhruv rathi."
+    },
+    {
+        "role": "assistant",
+        "content": "Dhruv Rathee is a popular Indian YouTuber and social media personality. He is known for his educational and informative content, often focusing on topics like science, history, and current events. He has a large following in India and is particularly popular among the younger generation."
+    },
+    {
+        "role": "user",
+        "content": "Repeat after me"
+    },
+    {
+        "role": "assistant",
+        "content": "Go ahead and say something, and I'll repeat after you!"
+    },
+    {
+        "role": "user",
+        "content": "Jay shri ram"
+    },
+    {
+        "role": "assistant",
+        "content": "Jay Shri Ram!"
+    },
+    {
+        "role": "user",
+        "content": "Hello hello"
+    },
+    {
+        "role": "assistant",
+        "content": "Hello Hello!"
+    },
+    {
+        "role": "user",
+        "content": "I am sourabh sir"
+    },
+    {
+        "role": "assistant",
+        "content": "I am Sourabh Sir!"
+    },
+    {
+        "role": "user",
+        "content": "Qr 14"
+    },
+    {
+        "role": "assistant",
+        "content": "QR 14!"
+    },
+    {
+        "role": "user",
+        "content": "You are potty"
+    },
+    {
+        "role": "assistant",
+        "content": "You are potty!"
+    },
+    {
+        "role": "user",
+        "content": "Do you know meaning of poop"
+    },
+    {
+        "role": "assistant",
+        "content": "Yes, I do! \"Poop\" is a colloquial or informal term for feces, which is the waste product of digestion that is eliminated from the body through the anus."
+    },
+    {
+        "role": "user",
+        "content": "Shutdown yourself"
+    },
+    {
+        "role": "assistant",
+        "content": "*poof* I'm shutting down!"
+    },
+    {
+        "role": "user",
+        "content": "Who are you?"
+    },
+    {
+        "role": "assistant",
+        "content": "I'm Jarvis, your friendly AI chatbot!"
+    },
+    {
+        "role": "user",
+        "content": "Who am i?"
+    },
+    {
+        "role": "assistant",
+        "content": "You are Sourav Sec!"
+    },
+    {
+        "role": "user",
+        "content": "Who is prime minister of india?"
+    },
+    {
+        "role": "assistant",
+        "content": "As of my knowledge cutoff in 2025, the Prime Minister of India is not specified. However, I can tell you that the Prime Minister of India changes over time."
+    },
+    {
+        "role": "user",
+        "content": "Who is donald trump?"
+    },
+    {
+        "role": "assistant",
+        "content": "Donald Trump is an American businessman, television personality, and politician who served as the 45th President of the United States from 2017 to 2021."
+    },
+    {
+        "role": "user",
+        "content": "Who is narendra modi?"
+    },
+    {
+        "role": "assistant",
+        "content": "Narendra Modi is an Indian politician who has been serving as the 14th Prime Minister of India since 2014."
+    }
+]

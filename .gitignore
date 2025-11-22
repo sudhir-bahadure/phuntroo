@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+env/
+
+# Environment Variables (SECRETS)
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+dist-ssr/
+*.local
+
+# Editor directories
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logs and cache
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.cache/
+.npm/
+.eslintcache
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Large model files
+*.gguf
+*.ggml
+*.bin
+*.safetensors
+public/models/*.vrm
+public/models/*.glb
+public/models/*.gltf
+
+# Production artifacts
+stats.html
+
+AI_SERVICES_GUIDE.md

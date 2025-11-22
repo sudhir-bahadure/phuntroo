@@ -1,0 +1,122 @@
+.voice-control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+}
+
+.mic-button {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-base);
+    box-shadow: 0 4px 20px var(--accent-glow);
+    overflow: visible;
+}
+
+.mic-button:hover:not(:disabled) {
+    transform: scale(1.1);
+    box-shadow: 0 6px 30px var(--accent-glow);
+}
+
+.mic-button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.mic-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.mic-button.listening {
+    animation: glow 1.5s ease-in-out infinite;
+    background: linear-gradient(135deg, var(--success), #059669);
+}
+
+.mic-button.speaking {
+    animation: pulse 1s ease-in-out infinite;
+    background: linear-gradient(135deg, var(--warning), #d97706);
+}
+
+.mic-icon-wrapper {
+    position: relative;
+    z-index: 2;
+}
+
+.mic-icon {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.volume-bars {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    align-items: flex-end;
+    height: 20px;
+}
+
+.volume-bar {
+    width: 4px;
+    background: var(--accent-primary);
+    border-radius: 2px;
+    animation: volumePulse 0.5s ease-in-out infinite;
+}
+
+@keyframes volumePulse {
+
+    0%,
+    100% {
+        height: 20%;
+    }
+
+    50% {
+        height: 100%;
+    }
+}
+
+.transcript-display {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    max-width: 400px;
+    text-align: center;
+}
+
+.transcript-label {
+    font-size: var(--font-size-xs);
+    color: var(--accent-primary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.transcript-text {
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.voice-status {
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.status-text {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
