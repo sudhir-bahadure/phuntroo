@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import VRMAvatar from './components/VRMAvatar';
 import ChatInterface from './components/ChatInterface';
 import { llamaService } from './services/llm/LlamaService';
+import { whisperService } from './services/stt/WhisperService';
 import './App.css';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
     // Local Model State
     const [modelReady, setModelReady] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
+    const [isRecording, setIsRecording] = useState(false);
 
     useEffect(() => {
         const initModel = async () => {
@@ -26,6 +28,12 @@ function App() {
                 await llamaService.initialize((progress) => {
                     setLoadingProgress(progress);
                 });
+
+                // Initialize Whisper in background
+                whisperService.initialize().catch(err => {
+                    console.warn('Whisper failed to load:', err);
+                });
+
                 setModelReady(true);
                 setStatus('Ready');
             } catch (error) {
@@ -80,6 +88,34 @@ function App() {
         }
     };
 
+    const handleVoiceToggle = async () => {
+        if (isRecording) {
+            // Stop recording and transcribe
+            setIsRecording(false);
+            setStatus('Transcribing...');
+            try {
+                const text = await whisperService.stopRecording();
+                if (text) {
+                    await handleSendMessage(text);
+                }
+            } catch (error) {
+                console.error('Voice error:', error);
+                setStatus('Voice error');
+            }
+        } else {
+            // Start recording
+            try {
+                await whisperService.startRecording();
+                setIsRecording(true);
+                setStatus('Listening...');
+            } catch (error) {
+                console.error('Failed to start recording:', error);
+                setStatus('Microphone error');
+            }
+        }
+    };
+
+
     if (!modelReady) {
         return (
             <div className="loading-screen">
@@ -124,7 +160,9 @@ function App() {
                     <ChatInterface
                         messages={messages}
                         onSendMessage={handleSendMessage}
+                        onVoiceToggle={handleVoiceToggle}
                         isProcessing={isProcessing}
+                        isRecording={isRecording}
                         status={status}
                     />
                 </div>

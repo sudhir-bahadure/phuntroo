@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ChatInterface.css';
 
-export default function ChatInterface({ messages, onSendMessage, isProcessing, status }) {
+export default function ChatInterface({ messages, onSendMessage, onVoiceToggle, isProcessing, isRecording, status }) {
     const [inputText, setInputText] = useState('');
     const messagesEndRef = useRef(null);
 
@@ -31,7 +31,7 @@ export default function ChatInterface({ messages, onSendMessage, isProcessing, s
     return (
         <div className="chat-interface">
             <div className="chat-header">
-                <h2>💬 Jarvis AI</h2>
+                <h2>💬 Phuntroo AI</h2>
                 <span className="status-badge">{status}</span>
             </div>
 
@@ -65,6 +65,16 @@ export default function ChatInterface({ messages, onSendMessage, isProcessing, s
                     disabled={isProcessing}
                     rows={2}
                 />
+                {onVoiceToggle && (
+                    <button
+                        type="button"
+                        className={`voice-button ${isRecording ? 'recording' : ''}`}
+                        onClick={onVoiceToggle}
+                        disabled={isProcessing}
+                    >
+                        {isRecording ? '⏹️' : '🎤'}
+                    </button>
+                )}
                 <button
                     type="submit"
                     className="send-button"
