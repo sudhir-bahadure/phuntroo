@@ -24,16 +24,55 @@ function App() {
         };
 
         setMessages(prev => [...prev, userMessage]);
+        setIsProcessing(true);
+        setStatus('Thinking...');
 
-        // Simulate AI response
-        setTimeout(() => {
+        try {
+            // Call the real AI backend
+            const API_BASE_URL = import.meta.env.VITE_API_URL ||
+                (import.meta.env.MODE === 'production'
+                    ? 'https://phuntroo-backend.onrender.com'
+                    : 'http://localhost:3000');
+
+            const response = await fetch(`${API_BASE_URL}/api/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: messageText,
+                    conversationHistory: messages
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
             const aiResponse = {
                 role: 'assistant',
-                content: `You said: "${messageText}"`,
+                content: data.response || data.message || 'Sorry, I could not process that.',
                 timestamp: new Date().toISOString()
             };
+
             setMessages(prev => [...prev, aiResponse]);
-        }, 1000);
+            setStatus('Ready');
+        } catch (error) {
+            console.error('Error calling AI backend:', error);
+
+            const errorResponse = {
+                role: 'assistant',
+                content: `Sorry, I encountered an error: ${error.message}. Please try again.`,
+                timestamp: new Date().toISOString()
+            };
+
+            setMessages(prev => [...prev, errorResponse]);
+            setStatus('Error');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
