@@ -3,9 +3,10 @@ import VRMAvatar from './components/VRMAvatar';
 import ChatInterface from './components/ChatInterface';
 import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
-import { analyzeTopicForOutfit } from './services/OutfitService';
+import { analyzeTopicForOutfit, getSmartOutfit } from './services/OutfitService';
 import { memoryService } from './services/memory/MemoryService';
 import { vectorDB } from './services/memory/VectorDB';
+import { learningEngine } from './services/learning/LearningEngine';
 import './App.css';
 
 function App() {
@@ -88,10 +89,10 @@ function App() {
             const updatedMessages = [...messages, userMessage, aiResponse];
             setMessages(updatedMessages);
 
-            // Analyze topic and update outfit
-            const newOutfit = analyzeTopicForOutfit(updatedMessages);
+            // Smart outfit selection using learned preferences
+            const newOutfit = await getSmartOutfit(updatedMessages, learningEngine);
             if (JSON.stringify(newOutfit) !== JSON.stringify(currentOutfit)) {
-                console.log('Topic detected:', newOutfit.name);
+                console.log('🎨 Outfit:', newOutfit.name);
                 setCurrentOutfit(newOutfit);
             }
 
@@ -112,6 +113,15 @@ function App() {
                     conversationId,
                     `${messageText} ${response}`
                 ).catch(err => console.warn('Embedding failed:', err));
+            }
+
+            // Trigger learning every 5 conversations
+            const stats = await memoryService.getStats();
+            if (stats && stats.totalConversations % 5 === 0) {
+                console.log('🎓 Learning from conversations...');
+                learningEngine.updatePersonalityFromLearnings().catch(err =>
+                    console.warn('Learning failed:', err)
+                );
             }
 
             setStatus('Ready');

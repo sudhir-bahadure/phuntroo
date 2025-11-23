@@ -74,6 +74,31 @@ export function analyzeTopicForOutfit(conversationHistory) {
     return OUTFIT_THEMES[selectedTheme];
 }
 
+/**
+ * Smart outfit selection using learned preferences
+ */
+export async function getSmartOutfit(conversationHistory, learningEngine) {
+    try {
+        // First try keyword-based detection
+        const keywordOutfit = analyzeTopicForOutfit(conversationHistory);
+
+        // If learning engine is available, use learned preferences
+        if (learningEngine) {
+            const recommendation = await learningEngine.getSmartOutfitRecommendation(keywordOutfit.name.toLowerCase());
+            if (recommendation && OUTFIT_THEMES[recommendation]) {
+                console.log(`🎓 Using learned preference: ${recommendation}`);
+                return OUTFIT_THEMES[recommendation];
+            }
+        }
+
+        return keywordOutfit;
+    } catch (error) {
+        console.error('Smart outfit error:', error);
+        return analyzeTopicForOutfit(conversationHistory);
+    }
+}
+
+
 export function hexToRgb(hex) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
