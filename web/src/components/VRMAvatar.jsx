@@ -92,6 +92,56 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
             manager.setValue('blink', 1.0);
         }
 
+        // ==============================
+        // PROCEDURAL BODY ANIMATIONS
+        // ==============================
+        const t = state.clock.elapsedTime;
+        const humanoid = vrm.humanoid;
+
+        if (humanoid) {
+            // 1. Breathing (Spine & Chest)
+            const spine = humanoid.getNormalizedBoneNode('spine');
+            if (spine) {
+                spine.rotation.x = Math.sin(t * 1) * 0.05; // Breathe in/out
+                spine.rotation.y = Math.sin(t * 0.5) * 0.02; // Subtle sway
+            }
+
+            // 2. Head Movement (Idle vs Talking)
+            const neck = humanoid.getNormalizedBoneNode('neck');
+            if (neck) {
+                if (isTalking) {
+                    // Active head bobbing while talking
+                    neck.rotation.x = Math.sin(t * 10) * 0.05;
+                    neck.rotation.y = Math.sin(t * 5) * 0.05;
+                    neck.rotation.z = Math.sin(t * 3) * 0.02;
+                } else {
+                    // Slow idle look around
+                    neck.rotation.x = Math.sin(t * 0.5) * 0.02;
+                    neck.rotation.y = Math.sin(t * 0.3) * 0.05;
+                }
+            }
+
+            // 3. Arm Gestures (Subtle)
+            const leftArm = humanoid.getNormalizedBoneNode('leftUpperArm');
+            const rightArm = humanoid.getNormalizedBoneNode('rightUpperArm');
+
+            if (leftArm && rightArm) {
+                // Arms relax down
+                leftArm.rotation.z = Math.PI / 3; // 60 degrees down
+                rightArm.rotation.z = -Math.PI / 3;
+
+                // Subtle sway
+                leftArm.rotation.x = Math.sin(t * 1) * 0.05;
+                rightArm.rotation.x = Math.sin(t * 1 + Math.PI) * 0.05;
+
+                if (isTalking) {
+                    // Gestures while talking
+                    rightArm.rotation.z = -Math.PI / 3 + Math.sin(t * 5) * 0.1;
+                    rightArm.rotation.x = Math.sin(t * 3) * 0.2;
+                }
+            }
+        }
+
         vrm.update(delta);
     });
 
