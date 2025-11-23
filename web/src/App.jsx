@@ -9,6 +9,8 @@ import { vectorDB } from './services/memory/VectorDB';
 import { learningEngine } from './services/learning/LearningEngine';
 import { webSearchSkill } from './services/skills/WebSearchSkill';
 import { knowledgeAcquisition } from './services/skills/KnowledgeAcquisition';
+import { personalityEngine } from './services/personality/PersonalityEngine';
+import { selfUpgradeEngine } from './services/upgrade/SelfUpgradeEngine';
 import './App.css';
 
 function App() {
@@ -127,8 +129,20 @@ function App() {
             if (conversationId) {
                 vectorDB.addEmbeddingToConversation(
                     conversationId,
-                    `${messageText} ${response}`
+                    `${messageText} ${finalResponse}`
                 ).catch(err => console.warn('Embedding failed:', err));
+
+                // Calculate conversation quality
+                selfUpgradeEngine.calculateQualityScore({
+                    userMessage: messageText,
+                    aiResponse: finalResponse,
+                    context: {
+                        outfit: newOutfit?.name,
+                        emotion: currentEmotion,
+                        topics: newOutfit ? [newOutfit.name] : []
+                    },
+                    timestamp: new Date().toISOString()
+                });
             }
 
             // Trigger learning every 5 conversations
@@ -137,6 +151,14 @@ function App() {
                 console.log('🎓 Learning from conversations...');
                 learningEngine.updatePersonalityFromLearnings().catch(err =>
                     console.warn('Learning failed:', err)
+                );
+            }
+
+            // Trigger autonomous self-upgrade every 10 conversations
+            if (stats && stats.totalConversations % 10 === 0) {
+                console.log('🚀 Running autonomous self-upgrade...');
+                selfUpgradeEngine.autonomousUpgrade().catch(err =>
+                    console.warn('Self-upgrade failed:', err)
                 );
             }
 
