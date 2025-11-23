@@ -4,6 +4,8 @@ import ChatInterface from './components/ChatInterface';
 import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
 import { analyzeTopicForOutfit } from './services/OutfitService';
+import { memoryService } from './services/memory/MemoryService';
+import { vectorDB } from './services/memory/VectorDB';
 import './App.css';
 
 function App() {
@@ -35,6 +37,15 @@ function App() {
                 whisperService.initialize().catch(err => {
                     console.warn('Whisper failed to load:', err);
                 });
+
+                // Initialize VectorDB for memory search
+                vectorDB.initialize().catch(err => {
+                    console.warn('VectorDB failed to load:', err);
+                });
+
+                // Load past memories
+                const stats = await memoryService.getStats();
+                console.log('📚 Memory loaded:', stats);
 
                 setModelReady(true);
                 setStatus('Ready');
@@ -82,6 +93,25 @@ function App() {
             if (JSON.stringify(newOutfit) !== JSON.stringify(currentOutfit)) {
                 console.log('Topic detected:', newOutfit.name);
                 setCurrentOutfit(newOutfit);
+            }
+
+            // Store conversation in memory
+            const conversationId = await memoryService.storeConversation(
+                messageText,
+                response,
+                {
+                    outfit: newOutfit?.name,
+                    emotion: currentEmotion,
+                    topics: newOutfit ? [newOutfit.name] : []
+                }
+            );
+
+            // Generate and store embedding asynchronously
+            if (conversationId) {
+                vectorDB.addEmbeddingToConversation(
+                    conversationId,
+                    `${messageText} ${response}`
+                ).catch(err => console.warn('Embedding failed:', err));
             }
 
             setStatus('Ready');
