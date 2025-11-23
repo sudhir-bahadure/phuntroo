@@ -54,26 +54,54 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
     useEffect(() => {
         if (!vrm || !outfit || JSON.stringify(outfit) === JSON.stringify(currentOutfit)) return;
 
-        console.log('Changing outfit to:', outfit.name, outfit.colors);
+        console.log('🎨 Changing outfit to:', outfit.name, outfit.colors);
         setCurrentOutfit(outfit);
 
-        // Update materials
+        // Update materials - traverse ALL meshes
+        let materialsChanged = 0;
         vrm.scene.traverse((obj) => {
             if (obj.isMesh && obj.material) {
-                const materialName = obj.material.name?.toLowerCase() || '';
+                // Handle both single material and material arrays
+                const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
 
-                // Apply colors based on material name
-                if (materialName.includes('shirt') || materialName.includes('top') || materialName.includes('body')) {
-                    obj.material.color.setHex(parseInt(outfit.colors.primary.replace('#', ''), 16));
-                } else if (materialName.includes('pant') || materialName.includes('bottom') || materialName.includes('skirt')) {
-                    obj.material.color.setHex(parseInt(outfit.colors.secondary.replace('#', ''), 16));
-                } else if (materialName.includes('accessory') || materialName.includes('detail')) {
-                    obj.material.color.setHex(parseInt(outfit.colors.accent.replace('#', ''), 16));
-                }
+                materials.forEach((material) => {
+                    if (!material.color) return;
 
-                obj.material.needsUpdate = true;
+                    const materialName = material.name?.toLowerCase() || '';
+                    const objectName = obj.name?.toLowerCase() || '';
+                    const combinedName = materialName + ' ' + objectName;
+
+                    // Apply colors - try multiple naming patterns + fallback
+                    if (combinedName.includes('shirt') || combinedName.includes('top') ||
+                        combinedName.includes('body') || combinedName.includes('torso') ||
+                        combinedName.includes('cloth') || combinedName.includes('upper')) {
+                        material.color.setHex(parseInt(outfit.colors.primary.replace('#', ''), 16));
+                        materialsChanged++;
+                    } else if (combinedName.includes('pant') || combinedName.includes('bottom') ||
+                        combinedName.includes('skirt') || combinedName.includes('lower') ||
+                        combinedName.includes('leg')) {
+                        material.color.setHex(parseInt(outfit.colors.secondary.replace('#', ''), 16));
+                        materialsChanged++;
+                    } else if (combinedName.includes('accessory') || combinedName.includes('detail') ||
+                        combinedName.includes('accent') || combinedName.includes('shoe')) {
+                        material.color.setHex(parseInt(outfit.colors.accent.replace('#', ''), 16));
+                        materialsChanged++;
+                    } else {
+                        // Fallback: apply primary color to any non-skin/hair material
+                        if (!combinedName.includes('face') && !combinedName.includes('hair') &&
+                            !combinedName.includes('skin') && !combinedName.includes('eye') &&
+                            !combinedName.includes('head')) {
+                            material.color.setHex(parseInt(outfit.colors.primary.replace('#', ''), 16));
+                            materialsChanged++;
+                        }
+                    }
+
+                    material.needsUpdate = true;
+                });
             }
         });
+
+        console.log(`🎨 Changed ${materialsChanged} materials`);
     }, [vrm, outfit, currentOutfit]);
 
 
