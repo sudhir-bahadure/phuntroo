@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import compression from 'vite-plugin-compression'
 
 export default defineConfig({
+    base: '/phuntroo/', // GitHub Pages base path
     plugins: [
         react()
     ],
