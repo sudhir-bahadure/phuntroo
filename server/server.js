@@ -12,15 +12,21 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? 'https://your-domain.com' 
+    origin: process.env.NODE_ENV === 'production'
+      ? ['https://sudhir-bahadure.github.io', 'https://sudhir-bahadure.github.io/phuntroo']
       : 'http://localhost:5173',
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? ['https://sudhir-bahadure.github.io', 'https://sudhir-bahadure.github.io/phuntroo']
+    : 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -33,8 +39,8 @@ app.use('/api/voice', voiceRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     services: {
       grok: !!process.env.GROK_API_KEY,
@@ -51,7 +57,7 @@ io.on('connection', (socket) => {
   socket.on('message', async (data) => {
     console.log('Received message:', data);
     // Handle real-time messages
-    socket.emit('response', { 
+    socket.emit('response', {
       message: 'Message received',
       timestamp: Date.now()
     });
