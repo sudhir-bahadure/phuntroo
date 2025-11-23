@@ -3,6 +3,7 @@ import VRMAvatar from './components/VRMAvatar';
 import ChatInterface from './components/ChatInterface';
 import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
+import { ttsService } from './services/tts/TTSService';
 import { analyzeTopicForOutfit, getSmartOutfit } from './services/OutfitService';
 import { memoryService } from './services/memory/MemoryService';
 import { vectorDB } from './services/memory/VectorDB';
@@ -41,6 +42,11 @@ function App() {
                 // Initialize Whisper in background
                 whisperService.initialize().catch(err => {
                     console.warn('Whisper failed to load:', err);
+                });
+
+                // Initialize TTS
+                ttsService.initialize().catch(err => {
+                    console.warn('TTS failed to load:', err);
                 });
 
                 // Initialize VectorDB for memory search
@@ -161,6 +167,15 @@ function App() {
                     console.warn('Self-upgrade failed:', err)
                 );
             }
+
+            // Make avatar speak the response
+            setIsTalking(true);
+            ttsService.speak(finalResponse).then(() => {
+                setIsTalking(false);
+            }).catch(err => {
+                console.warn('TTS error:', err);
+                setIsTalking(false);
+            });
 
             setStatus('Ready');
         } catch (error) {

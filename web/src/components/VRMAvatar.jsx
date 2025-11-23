@@ -23,12 +23,15 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
 
         const vrmUrls = [
             '/models/avatar.vrm',
-            'https://pixiv.github.io/three-vrm/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm'
+            // Working VRM 1.0 samples
+            'https://raw.githubusercontent.com/pixiv/three-vrm/dev/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm',
+            'https://cdn.jsdelivr.net/gh/pixiv/three-vrm@dev/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm'
         ];
 
         async function loadVRM() {
             for (const url of vrmUrls) {
                 try {
+                    console.log(`Trying to load VRM from: ${url}`);
                     const gltf = await loader.loadAsync(url);
                     const vrmModel = gltf.userData.vrm;
 
@@ -37,12 +40,12 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
                         vrmModel.scene.traverse(obj => obj.frustumCulled = false);
 
                         setVrm(vrmModel);
-                        console.log("VRM Loaded:", url);
-                        console.log("Available materials:", vrmModel.scene.children.map(c => c.name));
+                        console.log("✅ VRM Loaded successfully:", url);
+                        console.log("Available bones:", vrmModel.humanoid?.humanBones);
                         break;
                     }
                 } catch (err) {
-                    console.warn("VRM Load error:", err);
+                    console.warn(`❌ VRM Load error from ${url}:`, err.message);
                 }
             }
         }
