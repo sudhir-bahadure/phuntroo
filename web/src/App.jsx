@@ -3,6 +3,7 @@ import VRMAvatar from './components/VRMAvatar';
 import ChatInterface from './components/ChatInterface';
 import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
+import { analyzeTopicForOutfit } from './services/OutfitService';
 import './App.css';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
     const [modelReady, setModelReady] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
+    const [currentOutfit, setCurrentOutfit] = useState(null);
 
     useEffect(() => {
         const initModel = async () => {
@@ -72,7 +74,16 @@ function App() {
                 timestamp: new Date().toISOString()
             };
 
-            setMessages(prev => [...prev, aiResponse]);
+            const updatedMessages = [...messages, userMessage, aiResponse];
+            setMessages(updatedMessages);
+
+            // Analyze topic and update outfit
+            const newOutfit = analyzeTopicForOutfit(updatedMessages);
+            if (JSON.stringify(newOutfit) !== JSON.stringify(currentOutfit)) {
+                console.log('Topic detected:', newOutfit.name);
+                setCurrentOutfit(newOutfit);
+            }
+
             setStatus('Ready');
         } catch (error) {
             console.error('Error generating response:', error);
@@ -152,6 +163,7 @@ function App() {
                             expression={currentEmotion}
                             isTalking={isTalking}
                             viseme="neutral"
+                            outfit={currentOutfit}
                         />
                     </div>
                 </div>

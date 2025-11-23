@@ -10,9 +10,10 @@ import './VRMAvatar.css';
 /*  VRM Avatar Model      */
 /* ====================== */
 
-function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'neutral' }) {
+function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'neutral', outfit = null }) {
     const vrmRef = useRef(null);
     const [vrm, setVrm] = useState(null);
+    const [currentOutfit, setCurrentOutfit] = useState(null);
 
     useEffect(() => {
         const loader = new GLTFLoader();
@@ -37,6 +38,7 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
 
                         setVrm(vrmModel);
                         console.log("VRM Loaded:", url);
+                        console.log("Available materials:", vrmModel.scene.children.map(c => c.name));
                         break;
                     }
                 } catch (err) {
@@ -47,6 +49,33 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
 
         loadVRM();
     }, []);
+
+    // Apply outfit colors when outfit changes
+    useEffect(() => {
+        if (!vrm || !outfit || JSON.stringify(outfit) === JSON.stringify(currentOutfit)) return;
+
+        console.log('Changing outfit to:', outfit.name, outfit.colors);
+        setCurrentOutfit(outfit);
+
+        // Update materials
+        vrm.scene.traverse((obj) => {
+            if (obj.isMesh && obj.material) {
+                const materialName = obj.material.name?.toLowerCase() || '';
+
+                // Apply colors based on material name
+                if (materialName.includes('shirt') || materialName.includes('top') || materialName.includes('body')) {
+                    obj.material.color.setHex(parseInt(outfit.colors.primary.replace('#', ''), 16));
+                } else if (materialName.includes('pant') || materialName.includes('bottom') || materialName.includes('skirt')) {
+                    obj.material.color.setHex(parseInt(outfit.colors.secondary.replace('#', ''), 16));
+                } else if (materialName.includes('accessory') || materialName.includes('detail')) {
+                    obj.material.color.setHex(parseInt(outfit.colors.accent.replace('#', ''), 16));
+                }
+
+                obj.material.needsUpdate = true;
+            }
+        });
+    }, [vrm, outfit, currentOutfit]);
+
 
     /* ======== Expression Logic ======== */
 
@@ -171,6 +200,7 @@ export default function VRMAvatar({
     expression = 'neutral',
     isTalking = false,
     viseme = 'neutral',
+    outfit = null,
     className = ''
 }) {
     const [expr, setExpr] = useState(expression);
@@ -191,7 +221,7 @@ export default function VRMAvatar({
                 {/* FIX: "apartment" removed — use "city" or "sunset" */}
                 <Environment preset="city" />
 
-                <VRMAvatarModel expression={expr} isTalking={isTalking} viseme={vis} />
+                <VRMAvatarModel expression={expr} isTalking={isTalking} viseme={vis} outfit={outfit} />
 
                 <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
                     <planeGeometry args={[10, 10]} />
