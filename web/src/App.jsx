@@ -12,6 +12,8 @@ import { webSearchSkill } from './services/skills/WebSearchSkill';
 import { knowledgeAcquisition } from './services/skills/KnowledgeAcquisition';
 import { personalityEngine } from './services/personality/PersonalityEngine';
 import { selfUpgradeEngine } from './services/upgrade/SelfUpgradeEngine';
+import { errorMonitor } from './services/monitoring/ErrorMonitor';
+import { selfHealingEngine } from './services/healing/SelfHealingEngine';
 import './App.css';
 
 function App() {
@@ -34,6 +36,10 @@ function App() {
     useEffect(() => {
         const initModel = async () => {
             try {
+                // Start error monitoring and self-healing FIRST
+                errorMonitor.startMonitoring();
+                selfHealingEngine.activate();
+
                 setStatus('Downloading AI Brain...');
                 await llamaService.initialize((progress) => {
                     setLoadingProgress(progress);
@@ -57,6 +63,15 @@ function App() {
                 // Load past memories
                 const stats = await memoryService.getStats();
                 console.log('📚 Memory loaded:', stats);
+
+                // Perform initial health check
+                const healthReport = await selfHealingEngine.performHealthCheck();
+                console.log('🏥 Health report:', healthReport);
+
+                // Set up periodic health checks (every 5 minutes)
+                setInterval(async () => {
+                    await selfHealingEngine.performHealthCheck();
+                }, 5 * 60 * 1000);
 
                 setModelReady(true);
                 setStatus('Ready');
