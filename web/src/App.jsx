@@ -1,18 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import VRMAvatar from './components/VRMAvatar';
 import ChatInterface from './components/ChatInterface';
+import { llamaService } from './services/llm/LlamaService';
 import './App.css';
 
 function App() {
     const [messages, setMessages] = useState([{
         role: 'assistant',
-        content: "Hello! I'm PHUNTROO with VRM Avatar support.",
+        content: "Hello! I'm PHUNTROO. I run fully locally in your browser!",
         timestamp: new Date().toISOString()
     }]);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [status, setStatus] = useState('Ready');
+    const [status, setStatus] = useState('Initializing...');
     const [currentEmotion, setCurrentEmotion] = useState('neutral');
     const [isTalking, setIsTalking] = useState(false);
+
+    // Local Model State
+    const [modelReady, setModelReady] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState(0);
+
+    useEffect(() => {
+        const initModel = async () => {
+            try {
+                setStatus('Downloading AI Brain...');
+                await llamaService.initialize((progress) => {
+                    setLoadingProgress(progress);
+                });
+                setModelReady(true);
+                setStatus('Ready');
+            } catch (error) {
+                console.error('Failed to load model:', error);
+                setStatus('Error loading model');
+            }
+        };
+        initModel();
+    }, []);
 
     const handleSendMessage = async (messageText) => {
         if (!messageText.trim()) return;
@@ -28,46 +50,29 @@ function App() {
         setStatus('Thinking...');
 
         try {
-            // Call the real AI backend
-            const API_BASE_URL = import.meta.env.VITE_API_URL ||
-                (import.meta.env.MODE === 'production'
-                    ? 'https://phuntroo-backend.onrender.com'
-                    : 'http://localhost:3000');
-
-            const response = await fetch(`${API_BASE_URL}/api/ai/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: messageText,
-                    conversationHistory: messages
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
+            // Use Local LLM
+            const response = await llamaService.generateResponse(
+                [...messages, userMessage],
+                (token) => {
+                    // Optional: Stream tokens here if we want real-time typing
+                }
+            );
 
             const aiResponse = {
                 role: 'assistant',
-                content: data.response || data.message || 'Sorry, I could not process that.',
+                content: response,
                 timestamp: new Date().toISOString()
             };
 
             setMessages(prev => [...prev, aiResponse]);
             setStatus('Ready');
         } catch (error) {
-            console.error('Error calling AI backend:', error);
-
+            console.error('Error generating response:', error);
             const errorResponse = {
                 role: 'assistant',
-                content: `Sorry, I encountered an error: ${error.message}. Please try again.`,
+                content: `Error: ${error.message}`,
                 timestamp: new Date().toISOString()
             };
-
             setMessages(prev => [...prev, errorResponse]);
             setStatus('Error');
         } finally {
@@ -75,14 +80,31 @@ function App() {
         }
     };
 
+    if (!modelReady) {
+        return (
+            <div className="loading-screen">
+                <h1>🚀 PHUNTROO AI</h1>
+                <p>Downloading AI Brain (Llama-3-8B)...</p>
+                <div className="progress-bar">
+                    <div
+                        className="progress-fill"
+                        style={{ width: `${loadingProgress}%` }}
+                    />
+                </div>
+                <p>{loadingProgress.toFixed(1)}%</p>
+                <small>This happens only once. Please wait.</small>
+            </div>
+        );
+    }
+
     return (
         <div className="app">
             <header className="app-header">
                 <div className="header-left">
-                    <h1 className="app-title">🚀 PHUNTROO AI</h1>
+                    <h1 className="app-title">🚀 PHUNTROO AI (Local)</h1>
                     <div className="live-badge">
                         <div className="live-dot" />
-                        <span>VRM Avatar Active</span>
+                        <span>Offline Capable</span>
                     </div>
                 </div>
             </header>
@@ -109,7 +131,7 @@ function App() {
             </main>
 
             <footer className="app-footer">
-                <p>PHUNTROO AI Assistant | VRM Avatar System</p>
+                <p>PHUNTROO AI | Powered by Llama-3 WASM</p>
             </footer>
         </div>
     );
