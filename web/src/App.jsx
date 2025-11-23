@@ -7,6 +7,8 @@ import { analyzeTopicForOutfit, getSmartOutfit } from './services/OutfitService'
 import { memoryService } from './services/memory/MemoryService';
 import { vectorDB } from './services/memory/VectorDB';
 import { learningEngine } from './services/learning/LearningEngine';
+import { webSearchSkill } from './services/skills/WebSearchSkill';
+import { knowledgeAcquisition } from './services/skills/KnowledgeAcquisition';
 import './App.css';
 
 function App() {
@@ -72,17 +74,31 @@ function App() {
         setStatus('Thinking...');
 
         try {
-            // Use Local LLM
-            const response = await llamaService.generateResponse(
-                [...messages, userMessage],
-                (token) => {
-                    // Optional: Stream tokens here if we want real-time typing
-                }
-            );
+            // Check if we should search the web first
+            let finalResponse = '';
+
+            if (webSearchSkill.shouldSearch(messageText)) {
+                setStatus('Searching the web...');
+                const searchSummary = await webSearchSkill.searchAndSummarize(messageText);
+
+                // Use LLM to incorporate search results
+                const enhancedPrompt = `User asked: "${messageText}"\n\nWeb search results:\n${searchSummary}\n\nProvide a helpful response incorporating this information.`;
+                finalResponse = await llamaService.generateResponse(
+                    [...messages, { role: 'user', content: enhancedPrompt }],
+                    (token) => { }
+                );
+            } else {
+                // Use Local LLM normally
+                setStatus('Thinking...');
+                finalResponse = await llamaService.generateResponse(
+                    [...messages, userMessage],
+                    (token) => { }
+                );
+            }
 
             const aiResponse = {
                 role: 'assistant',
-                content: response,
+                content: finalResponse,
                 timestamp: new Date().toISOString()
             };
 
