@@ -34,7 +34,7 @@ function App() {
                     ? 'https://phuntroo-backend.onrender.com'
                     : 'http://localhost:3000');
 
-            const response = await fetch(`${API_BASE_URL}/api/chat`, {
+            const response = await fetch(`${API_BASE_URL}/api/ai/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
