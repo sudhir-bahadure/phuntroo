@@ -186,9 +186,9 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
             const rightArm = humanoid.getNormalizedBoneNode('rightUpperArm');
 
             if (leftArm && rightArm) {
-                // Arms relax down
-                leftArm.rotation.z = Math.PI / 3; // 60 degrees down
-                rightArm.rotation.z = -Math.PI / 3;
+                // Arms DOWN naturally (negative rotation)
+                leftArm.rotation.z = -Math.PI / 6; // 30 degrees down
+                rightArm.rotation.z = Math.PI / 6;
 
                 // Subtle sway
                 leftArm.rotation.x = Math.sin(t * 1) * 0.05;
@@ -196,7 +196,7 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
 
                 if (isTalking) {
                     // Gestures while talking
-                    rightArm.rotation.z = -Math.PI / 3 + Math.sin(t * 5) * 0.1;
+                    rightArm.rotation.z = Math.PI / 6 + Math.sin(t * 5) * 0.1;
                     rightArm.rotation.x = Math.sin(t * 3) * 0.2;
                 }
             }
