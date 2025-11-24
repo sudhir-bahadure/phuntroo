@@ -35,6 +35,11 @@ export const OUTFIT_THEMES = {
         name: 'Energetic',
         colors: { primary: '#FF6B6B', secondary: '#FFE66D', accent: '#4ECDC4' },
         description: 'Sports, fitness, excitement'
+    },
+    traditional: {
+        name: 'Traditional Saree',
+        colors: { primary: '#B71C1C', secondary: '#D4AF37', accent: '#FFD700' },
+        description: 'Traditional, cultural, Indian topics'
     }
 };
 
@@ -51,6 +56,7 @@ export function analyzeTopicForOutfit(conversationHistory) {
         festive: ['party', 'celebrate', 'festival', 'birthday', 'happy', 'joy', 'fun'],
         calm: ['relax', 'calm', 'peace', 'meditate', 'quiet', 'rest', 'sleep'],
         energetic: ['sport', 'exercise', 'run', 'energy', 'active', 'fitness', 'gym'],
+        traditional: ['indian', 'culture', 'traditional', 'saree', 'diwali', 'holi', 'heritage', 'namaste'],
         casual: [] // default
     };
 

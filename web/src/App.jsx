@@ -31,7 +31,10 @@ function App() {
     const [modelReady, setModelReady] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
-    const [currentOutfit, setCurrentOutfit] = useState(null);
+    const [currentOutfit, setCurrentOutfit] = useState({
+        name: 'Traditional Saree',
+        colors: { primary: '#B71C1C', secondary: '#D4AF37', accent: '#FFD700' }
+    });
 
     useEffect(() => {
         const initModel = async () => {
