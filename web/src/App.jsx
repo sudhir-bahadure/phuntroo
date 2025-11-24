@@ -68,20 +68,6 @@ function App() {
                     console.warn('VectorDB failed to load:', err);
                 });
 
-                // Initialize Consciousness
-                try {
-                    await advancedMemory.initialize();
-                    const consciousness = new ConsciousnessEngine(advancedMemory, huggingFaceAI);
-                    consciousness.onProactiveMessage((msg, emo) => {
-                        setMessages(prev => [...prev, { role: 'assistant', content: msg, timestamp: new Date().toISOString(), isProactive: true }]);
-                        setCurrentEmotion(emo);
-                        ttsService.speak(msg);
-                    });
-                    consciousness.activate();
-                    setConsciousnessEngine(consciousness);
-                    console.log('🧠 Consciousness activated');
-                } catch (e) { console.warn('Consciousness failed:', e); }
-
                 // Load past memories
                 const stats = await memoryService.getStats();
                 console.log('📚 Memory loaded:', stats);
@@ -97,6 +83,20 @@ function App() {
 
                 setModelReady(true);
                 setStatus('Ready');
+
+                // Initialize Consciousness AFTER everything else is ready
+                try {
+                    await advancedMemory.initialize();
+                    const consciousness = new ConsciousnessEngine(advancedMemory, huggingFaceAI);
+                    consciousness.onProactiveMessage((msg, emo) => {
+                        setMessages(prev => [...prev, { role: 'assistant', content: msg, timestamp: new Date().toISOString(), isProactive: true }]);
+                        setCurrentEmotion(emo);
+                        ttsService.speak(msg);
+                    });
+                    consciousness.activate();
+                    setConsciousnessEngine(consciousness);
+                    console.log('🧠 Consciousness activated');
+                } catch (e) { console.warn('Consciousness init delayed:', e); }
             } catch (error) {
                 console.error('Failed to load model:', error);
                 setStatus('Error loading model');
