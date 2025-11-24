@@ -22,7 +22,7 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
         loader.register((parser) => new VRMLoaderPlugin(parser));
 
         const vrmUrls = [
-            '/models/avatar.vrm',
+            `${import.meta.env.BASE_URL}models/avatar.vrm`,
             // Working VRM 1.0 samples
             'https://raw.githubusercontent.com/pixiv/three-vrm/dev/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm',
             'https://cdn.jsdelivr.net/gh/pixiv/three-vrm@dev/packages/three-vrm/examples/models/VRM1_Constraint_Twist_Sample.vrm'
