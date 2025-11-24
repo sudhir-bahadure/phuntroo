@@ -70,7 +70,7 @@ export async function analyzeIntent(query) {
                     content: query
                 }
             ],
-            model: TO FRONTt',
+            model: 'llama-3.1-8b-instant',
             temperature: 0.3,
             response_format: { type: 'json_object' }
         });
