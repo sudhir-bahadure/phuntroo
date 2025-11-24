@@ -138,7 +138,7 @@ function App() {
             // Store conversation in memory
             const conversationId = await memoryService.storeConversation(
                 messageText,
-                response,
+                finalResponse,
                 {
                     outfit: newOutfit?.name,
                     emotion: currentEmotion,
