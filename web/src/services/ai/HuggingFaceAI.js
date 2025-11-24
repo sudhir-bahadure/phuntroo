@@ -38,8 +38,9 @@ class HuggingFaceAI {
             return response;
         } catch (error) {
             console.error('Hugging Face error:', error);
-            // Fallback to simpler model
-            return await this.fallbackResponse(userMessage);
+            // Use smart fallback with context
+            const { smartFallbackAI } = await import('./SmartFallbackAI');
+            return smartFallbackAI.generateResponse(userMessage, context);
         }
     }
 

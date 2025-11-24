@@ -17,6 +17,7 @@ import { selfHealingEngine } from './services/healing/SelfHealingEngine';
 import { advancedMemory } from './services/memory/AdvancedMemoryEngine';
 import ConsciousnessEngine from './services/consciousness/ConsciousnessEngine';
 import { huggingFaceAI } from './services/ai/HuggingFaceAI';
+import { autonomousOutfitEngine } from './services/outfit/AutonomousOutfitEngine';
 import './App.css';
 
 function App() {
