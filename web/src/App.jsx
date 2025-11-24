@@ -273,8 +273,14 @@ function App() {
                 <div className="avatar-panel">
                     <div className="avatar-container">
                         <Avatar3D
-                            speaking={isTalking}
+                            expression={currentEmotion}
                             visemes={ttsService.visemeQueue}
+                            avatarState={
+                                isTalking ? 'talking' :
+                                    isProcessing ? 'thinking' :
+                                        isRecording ? 'listening' :
+                                            'idle'
+                            }
                         />
                     </div>
                 </div>
