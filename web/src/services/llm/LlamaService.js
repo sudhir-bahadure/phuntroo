@@ -25,13 +25,29 @@ class LlamaService {
             });
 
             console.log('Downloading and loading model...');
-            await this.wllama.loadModelFromUrl(CONFIG.modelUrl, {
-                progressCallback: (opts) => {
-                    const percent = (opts.loaded / opts.total) * 100;
-                    console.log(`Loading Model: ${percent.toFixed(1)}%`);
-                    if (this.onProgress) this.onProgress(percent);
-                },
-            });
+
+            // Retry logic for model download
+            const maxRetries = 3;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    await this.wllama.loadModelFromUrl(CONFIG.modelUrl, {
+                        progressCallback: (opts) => {
+                            const percent = (opts.loaded / opts.total) * 100;
+                            console.log(`Loading Model (Attempt ${i + 1}/${maxRetries}): ${percent.toFixed(1)}%`);
+                            if (this.onProgress) this.onProgress(percent);
+                        },
+                    });
+                    break; // Success, exit loop
+                } catch (err) {
+                    console.warn(`Model load attempt ${i + 1} failed:`, err);
+                    if (i === maxRetries - 1) throw err; // Throw on last attempt
+
+                    // Wait before retrying (exponential backoff: 1s, 2s, 4s)
+                    const delay = 1000 * Math.pow(2, i);
+                    console.log(`Retrying in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
 
             this.isReady = true;
             console.log('Llama Model Loaded!');

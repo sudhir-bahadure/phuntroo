@@ -13,10 +13,26 @@ class WhisperService {
 
         try {
             console.log('Loading Whisper model...');
-            this.transcriber = await pipeline(
-                'automatic-speech-recognition',
-                'Xenova/whisper-tiny.en'
-            );
+
+            // Retry logic for model download
+            const maxRetries = 3;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    this.transcriber = await pipeline(
+                        'automatic-speech-recognition',
+                        'Xenova/whisper-tiny.en'
+                    );
+                    break; // Success
+                } catch (err) {
+                    console.warn(`Whisper load attempt ${i + 1} failed:`, err);
+                    if (i === maxRetries - 1) throw err;
+
+                    const delay = 1000 * Math.pow(2, i);
+                    console.log(`Retrying Whisper in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+
             this.isReady = true;
             console.log('Whisper ready!');
         } catch (error) {

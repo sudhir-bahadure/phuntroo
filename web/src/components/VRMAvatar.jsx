@@ -29,9 +29,11 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
         ];
 
         async function loadVRM() {
-            for (const url of vrmUrls) {
+            for (const [index, url] of vrmUrls.entries()) {
                 try {
-                    console.log(`Trying to load VRM from: ${url}`);
+                    // Only log for the first attempt or if it's a remote URL
+                    if (index > 0) console.log(`Trying fallback VRM: ${url}`);
+
                     const gltf = await loader.loadAsync(url);
                     const vrmModel = gltf.userData.vrm;
 
@@ -40,12 +42,16 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
                         vrmModel.scene.traverse(obj => obj.frustumCulled = false);
 
                         setVrm(vrmModel);
-                        console.log("✅ VRM Loaded successfully:", url);
-                        console.log("Available bones:", vrmModel.humanoid?.humanBones);
+                        console.log("✅ VRM Loaded successfully");
                         break;
                     }
                 } catch (err) {
-                    console.warn(`❌ VRM Load error from ${url}:`, err.message);
+                    // Suppress error for local file if it's missing (expected 404)
+                    if (index === 0) {
+                        console.log("ℹ️ Local avatar.vrm not found, switching to fallback...");
+                    } else {
+                        console.warn(`⚠️ VRM Fallback error (${url}):`, err.message);
+                    }
                 }
             }
         }
