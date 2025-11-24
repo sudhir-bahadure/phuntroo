@@ -1,4 +1,4 @@
-import { pipeline } from '@xenova/transformers';
+// import { pipeline } from '@xenova/transformers';
 import { memoryService } from './MemoryService';
 
 class VectorDB {
@@ -9,23 +9,12 @@ class VectorDB {
 
     async initialize() {
         if (this.isReady) return;
-
-        try {
-            console.log('Loading embedding model...');
-            this.embedder = await pipeline(
-                'feature-extraction',
-                'Xenova/all-MiniLM-L6-v2'
-            );
-            this.isReady = true;
-            console.log('Embedding model ready!');
-        } catch (error) {
-            console.error('Failed to load embedder:', error);
-            throw error;
-        }
+        console.log('VectorDB: Using simple hash-based embeddings for deployment.');
+        this.isReady = true;
     }
 
     /**
-     * Generate embedding for text
+     * Generate embedding for text (simple hash-based mock)
      */
     async embed(text) {
         if (!this.isReady) {
@@ -33,11 +22,16 @@ class VectorDB {
         }
 
         try {
-            const output = await this.embedder(text, {
-                pooling: 'mean',
-                normalize: true
-            });
-            return Array.from(output.data);
+            // Simple hash-based embedding (384 dimensions to match all-MiniLM-L6-v2)
+            const embedding = new Array(384).fill(0);
+            for (let i = 0; i < text.length; i++) {
+                const charCode = text.charCodeAt(i);
+                embedding[i % 384] += charCode / (i + 1);
+            }
+
+            // Normalize
+            const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
+            return embedding.map(val => val / norm);
         } catch (error) {
             console.error('Embedding error:', error);
             return null;

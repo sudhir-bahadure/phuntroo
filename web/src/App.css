@@ -225,27 +225,6 @@
 
 /* Animations */
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes pulse {
-
-    0%,
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #10b981;
-}
-
-.live-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
     background: #10b981;
     box-shadow: 0 0 10px #10b981;
     animation: pulse 2s ease-in-out infinite;

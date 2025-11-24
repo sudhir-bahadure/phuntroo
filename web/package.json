@@ -7,13 +7,16 @@
         "build": "vite build",
         "preview": "vite preview"
     },
+    "browser": {
+        "fs": false,
+        "path": false,
+        "crypto": false
+    },
     "dependencies": {
         "@pixiv/three-vrm": "^3.4.4",
         "@react-three/drei": "^9.122.0",
         "@react-three/fiber": "^8.18.0",
         "@readyplayerme/rpm-react-sdk": "^0.1.5",
-        "@wllama/wllama": "^2.3.6",
-        "@xenova/transformers": "^2.17.2",
         "axios": "^1.6.2",
         "dexie": "^4.2.1",
         "framer-motion": "^10.16.16",
@@ -27,7 +30,8 @@
         "@types/react": "^18.2.43",
         "@types/react-dom": "^18.2.17",
         "@vitejs/plugin-react": "^4.2.1",
-        "vite": "^5.0.8",
-        "vite-plugin-compression": "^0.5.1"
+        "vite": "^4.5.0",
+        "vite-plugin-compression": "^0.5.1",
+        "vite-plugin-node-polyfills": "^0.22.0"
     }
 }
