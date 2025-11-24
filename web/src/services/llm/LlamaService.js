@@ -39,38 +39,25 @@ export class LlamaService {
                 throw new Error("cloudEndpoint not configured");
             }
 
-            // For now, if cloud fails or is not set up, return a default helpful message
-            // to ensure the "Brain Offline" message never appears.
+// For now, if cloud fails or is not set up, return a default helpful message
+// to ensure the "Brain Offline" message never appears.
 
-            /* 
-            const res = await fetch(this.cloudEndpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ messages: history }),
-            });
+/*
+const res = await fetch(this.cloudEndpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages: history }),
+});
 
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-            const data = await res.json();
-            const text =
-                data.reply ??
-                data.content ??
-                data.choices?.[0]?.message?.content ??
-                "I am online and ready to help.";
-            return text;
-            */
-
-            // Simulating a response for now since we are in "Local" mode mostly
-            return "I am online and my brain is fully operational. I can help you with your questions.";
-
-        } catch (err) {
-            console.error("Cloud AI error:", err);
-            return (
-                "I am online, but I just hit an internal error while thinking. " +
-                "Please ask again or try a slightly different question."
-            );
-        }
-    }
+const data = await res.json();
+const text =
+    data.reply ??
+    data.content ??
+);
+}
+}
 }
 
 export const llamaService = new LlamaService();
