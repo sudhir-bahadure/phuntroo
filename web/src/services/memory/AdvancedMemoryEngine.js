@@ -13,7 +13,7 @@ class AdvancedMemoryEngine {
 
     async initialize() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(this.dbName, 1);
+            const request = indexedDB.open(this.dbName, 11);
 
             request.onerror = () => reject(request.error);
             request.onsuccess = () => {
@@ -24,6 +24,9 @@ class AdvancedMemoryEngine {
 
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
+                const oldVersion = event.oldVersion;
+
+                console.log(`🔄 Upgrading DB from v${oldVersion} to v11`);
 
                 // Episodic memory: specific conversations
                 if (!db.objectStoreNames.contains('conversations')) {
