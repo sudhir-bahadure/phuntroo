@@ -97,6 +97,10 @@ function App() {
                     consciousness.activate();
                     setConsciousnessEngine(consciousness);
                     console.log('🧠 Consciousness activated');
+
+                    // Initialize autonomous outfit engine
+                    autonomousOutfitEngine.webSearch = webSearchSkill;
+                    console.log('👗 Autonomous outfit engine ready');
                 } catch (e) { console.warn('Consciousness init delayed:', e); }
             } catch (error) {
                 console.error('Failed to load model:', error);
@@ -156,6 +160,37 @@ function App() {
             if (JSON.stringify(newOutfit) !== JSON.stringify(currentOutfit)) {
                 console.log('🎨 Outfit:', newOutfit.name);
                 setCurrentOutfit(newOutfit);
+            }
+
+            // Check if AI wants to autonomously change outfit
+            try {
+                const autonomousOutfit = await autonomousOutfitEngine.decideOutfitChange({
+                    userMessage: messageText,
+                    emotion: currentEmotion,
+                    timeOfDay: new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'
+                });
+
+                if (autonomousOutfit) {
+                    console.log('👗 AI chose outfit:', autonomousOutfit.name);
+                    setCurrentOutfit(autonomousOutfit);
+
+                    // AI announces outfit change
+                    const announcement = autonomousOutfitEngine.getOutfitAnnouncement(autonomousOutfit);
+                    const outfitMessage = {
+                        role: 'assistant',
+                        content: announcement,
+                        timestamp: new Date().toISOString(),
+                        isOutfitChange: true
+                    };
+                    setMessages(prev => [...prev, outfitMessage]);
+
+                    // Speak the announcement
+                    setTimeout(() => {
+                        ttsService.speak(announcement);
+                    }, 1000);
+                }
+            } catch (err) {
+                console.warn('Autonomous outfit failed:', err);
             }
 
             // Store conversation in memory
