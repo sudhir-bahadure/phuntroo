@@ -117,12 +117,6 @@ export const VRMAvatar = ({ visemeIndex }) => {
             state.velocity.x += forceX * delta;
             state.velocity.y += forceY * delta;
 
-            state.velocity.x *= 1 - damping * delta;
-            state.velocity.y *= 1 - damping * delta;
-
-            state.offset.x += state.velocity.x * delta;
-            state.offset.y += state.velocity.y * delta;
-
             import React, { useEffect, useRef, useState } from "react";
             import { useFrame } from "@react-three/fiber";
             import * as THREE from "three";
