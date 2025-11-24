@@ -23,7 +23,7 @@ export default function AvatarCanvas({ expression, visemes, avatarState }) {
 
     return (
         <Canvas
-            camera={{ position: [0, 1.4, 1.5], fov: 40 }}
+            camera={{ position: [0, 0.8, 2.5], fov: 50 }}
             style={{ width: "100%", height: "100%" }}
         >
             <ambientLight intensity={0.8} />
@@ -36,11 +36,13 @@ export default function AvatarCanvas({ expression, visemes, avatarState }) {
                 />
             </Suspense>
             <OrbitControls
-                target={[0, 1.4, 0]}
-                enableZoom={false}
+                target={[0, 0.8, 0]}
+                enableZoom={true}
                 enablePan={false}
                 maxPolarAngle={Math.PI / 2}
-                minPolarAngle={Math.PI / 3}
+                minPolarAngle={Math.PI / 4}
+                minDistance={1.5}
+                maxDistance={4}
             />
         </Canvas>
     );
