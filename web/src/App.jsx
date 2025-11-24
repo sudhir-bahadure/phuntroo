@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import VRMAvatar from './components/VRMAvatar';
+import { Avatar3D } from './components/avatar/Avatar3D';
 import ChatInterface from './components/ChatInterface';
 import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
@@ -271,11 +271,9 @@ function App() {
             <main className="app-main">
                 <div className="avatar-panel">
                     <div className="avatar-container">
-                        <VRMAvatar
-                            expression={currentEmotion}
-                            isTalking={isTalking}
-                            viseme="neutral"
-                            outfit={currentOutfit}
+                        <Avatar3D
+                            speaking={isTalking}
+                            visemes={ttsService.visemeQueue}
                         />
                     </div>
                 </div>

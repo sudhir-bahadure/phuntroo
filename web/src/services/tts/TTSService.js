@@ -3,11 +3,14 @@
  * Built into browsers, completely free
  */
 
+import { charToViseme } from '../../utils/visemeMapping';
+
 class TTSService {
     constructor() {
         this.synth = window.speechSynthesis;
         this.voice = null;
         this.isReady = false;
+        this.visemeQueue = []; // Shared queue for avatar
     }
 
     async initialize() {
@@ -85,6 +88,7 @@ class TTSService {
         return new Promise((resolve, reject) => {
             // Cancel any ongoing speech
             this.synth.cancel();
+            this.visemeQueue.length = 0; // Clear queue
 
             const utterance = new SpeechSynthesisUtterance(text);
 
@@ -101,12 +105,22 @@ class TTSService {
             // Event handlers
             utterance.onend = () => {
                 console.log('🔊 Speech finished');
+                this.visemeQueue.length = 0;
                 resolve();
             };
 
             utterance.onerror = (error) => {
                 console.error('Speech error:', error);
                 reject(error);
+            };
+
+            // Viseme generation on boundary
+            utterance.onboundary = (ev) => {
+                if (ev.name === 'word' || ev.name === 'sentence') {
+                    const charIndex = ev.charIndex;
+                    const char = text[charIndex] || ' ';
+                    this.visemeQueue.push(charToViseme(char));
+                }
             };
 
             // Speak
@@ -119,6 +133,7 @@ class TTSService {
      */
     stop() {
         this.synth.cancel();
+        this.visemeQueue.length = 0;
     }
 
     /**
