@@ -14,6 +14,9 @@ import { personalityEngine } from './services/personality/PersonalityEngine';
 import { selfUpgradeEngine } from './services/upgrade/SelfUpgradeEngine';
 import { errorMonitor } from './services/monitoring/ErrorMonitor';
 import { selfHealingEngine } from './services/healing/SelfHealingEngine';
+import { advancedMemory } from './services/memory/AdvancedMemoryEngine';
+import ConsciousnessEngine from './services/consciousness/ConsciousnessEngine';
+import { huggingFaceAI } from './services/ai/HuggingFaceAI';
 import './App.css';
 
 function App() {
@@ -35,9 +38,10 @@ function App() {
         name: 'Casual',
         colors: { primary: '#E74C3C', secondary: '#ECF0F1', accent: '#F39C12' }
     });
+    const [consciousnessEngine, setConsciousnessEngine] = useState(null);
 
     useEffect(() => {
-        console.log('🚀 PHUNTROO AI - Version: Fixed Deployment 1.1 (Local Fixes Applied)');
+        console.log('🚀 PHUNTROO AI - Version: Conscious AI 2.0');
         const initModel = async () => {
             try {
                 // Start error monitoring and self-healing FIRST
