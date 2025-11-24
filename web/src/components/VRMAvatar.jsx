@@ -82,7 +82,7 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
 
                     // Apply colors - try multiple naming patterns + fallback
                     if (combinedName.includes('shirt') || combinedName.includes('top') ||
-                        combinedName.includes('body') || combinedName.includes('torso') ||
+                        combinedName.includes('torso') ||
                         combinedName.includes('cloth') || combinedName.includes('upper')) {
                         material.color.setHex(parseInt(outfit.colors.primary.replace('#', ''), 16));
                         materialsChanged++;
@@ -138,24 +138,24 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
         if (!vrm) return;
 
         const manager = vrm.expressionManager;
-        if (!manager) return;
+        if (manager) {
+            // Reset all blendshapes
+            Object.keys(manager.expressionMap).forEach(name => manager.setValue(name, 0));
 
-        // Reset all blendshapes
-        Object.keys(manager.expressionMap).forEach(name => manager.setValue(name, 0));
+            // Apply emotion
+            const exp = expressions[expression] || {};
+            Object.entries(exp).forEach(([k, v]) => manager.setValue(k, v));
 
-        // Apply emotion
-        const exp = expressions[expression] || {};
-        Object.entries(exp).forEach(([k, v]) => manager.setValue(k, v));
+            // Apply viseme while talking
+            if (isTalking && viseme !== 'neutral') {
+                const vsm = visemes[viseme] || {};
+                Object.entries(vsm).forEach(([k, v]) => manager.setValue(k, v * 0.7));
+            }
 
-        // Apply viseme while talking
-        if (isTalking && viseme !== 'neutral') {
-            const vsm = visemes[viseme] || {};
-            Object.entries(vsm).forEach(([k, v]) => manager.setValue(k, v * 0.7));
-        }
-
-        // Blink
-        if (Math.sin(state.clock.elapsedTime * 3) > 0.98) {
-            manager.setValue('blink', 1.0);
+            // Blink
+            if (Math.sin(state.clock.elapsedTime * 3) > 0.98) {
+                manager.setValue('blink', 1.0);
+            }
         }
 
         // ==============================
@@ -192,9 +192,10 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
             const rightArm = humanoid.getNormalizedBoneNode('rightUpperArm');
 
             if (leftArm && rightArm) {
-                // Arms DOWN naturally (negative rotation)
-                leftArm.rotation.z = -Math.PI / 6; // 30 degrees down
-                rightArm.rotation.z = Math.PI / 6;
+                // Arms DOWN naturally (negative rotation) - FORCE ARMS DOWN
+                // 70-80 degrees down is more natural than 30
+                leftArm.rotation.z = -Math.PI / 2.5;
+                rightArm.rotation.z = Math.PI / 2.5;
 
                 // Subtle sway
                 leftArm.rotation.x = Math.sin(t * 1) * 0.05;
@@ -202,7 +203,7 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
 
                 if (isTalking) {
                     // Gestures while talking
-                    rightArm.rotation.z = Math.PI / 6 + Math.sin(t * 5) * 0.1;
+                    rightArm.rotation.z = (Math.PI / 2.5) + Math.sin(t * 5) * 0.1;
                     rightArm.rotation.x = Math.sin(t * 3) * 0.2;
                 }
             }

@@ -19,7 +19,7 @@ import './App.css';
 function App() {
     const [messages, setMessages] = useState([{
         role: 'assistant',
-        content: "Hello! I'm PHUNTROO. I run fully locally in your browser!",
+        content: "Hello! I am online and ready. My brain is fully operational.",
         timestamp: new Date().toISOString()
     }]);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -32,11 +32,12 @@ function App() {
     const [loadingProgress, setLoadingProgress] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
     const [currentOutfit, setCurrentOutfit] = useState({
-        name: 'Traditional Saree',
-        colors: { primary: '#B71C1C', secondary: '#D4AF37', accent: '#FFD700' }
+        name: 'Casual',
+        colors: { primary: '#E74C3C', secondary: '#ECF0F1', accent: '#F39C12' }
     });
 
     useEffect(() => {
+        console.log('🚀 PHUNTROO AI - Version: Fixed Deployment 1.1 (Local Fixes Applied)');
         const initModel = async () => {
             try {
                 // Start error monitoring and self-healing FIRST

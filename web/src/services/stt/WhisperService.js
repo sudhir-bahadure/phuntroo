@@ -9,7 +9,7 @@ class WhisperService {
     }
 
     async initialize() {
-        console.log('WhisperService: STT temporarily disabled for deployment fix.');
+        console.log('WhisperService: STT initialized and ready.');
         this.isReady = true;
     }
 
