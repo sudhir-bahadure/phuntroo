@@ -6,7 +6,7 @@ import { GLTFLoader } from 'three-stdlib';
 
 const VISEME_NAMES = ["aa", "ih", "ou", "ee", "oh", "sil"];
 
-export const VRMAvatar = ({ visemeIndex }) => {
+export const VRMAvatar = ({ visemeIndex, avatarState }) => {
     const vrmRef = useRef(null);
     const mixerRef = useRef(null);
     const [loadedScene, setLoadedScene] = useState(null);
@@ -68,76 +68,106 @@ export const VRMAvatar = ({ visemeIndex }) => {
         const vrm = vrmRef.current;
         if (!vrm) return;
 
-        // ==== HEAD TRACKING ====
-        // Use getNormalizedBoneNode for VRM 1.0 compatibility
+        const t = state.clock.elapsedTime;
+
+        // ==== AUTONOMOUS GAZE & HEAD TRACKING ====
+        // Calculate target based on state
+        let targetLookAt = { x: 0, y: 0 };
+
+        if (avatarState === 'listening') {
+            // Look at user (camera)
+            targetLookAt = { x: 0, y: 0 };
+        } else if (avatarState === 'thinking') {
+            // Look up/away
+            targetLookAt = { x: 0.5, y: 0.5 };
+        } else if (avatarState === 'talking') {
+            // Look at user but with some natural motion
+            targetLookAt = {
+                x: Math.sin(t * 0.5) * 0.1,
+                y: Math.sin(t * 0.3) * 0.05
+            };
+        } else {
+            // Idle: Look around randomly
+            // We can use noise or simple sine waves for now
+            targetLookAt = {
+                x: Math.sin(t * 0.2) * 0.3 + Math.sin(t * 1.5) * 0.1,
+                y: Math.sin(t * 0.15) * 0.1
+            };
+        }
+
+        // Smoothly interpolate current pointer/lookAt
+        pointer.current.x += (targetLookAt.x - pointer.current.x) * 0.05;
+        pointer.current.y += (targetLookAt.y - pointer.current.y) * 0.05;
+
+        // Apply to head
         const head = vrm.humanoid?.getNormalizedBoneNode("head");
         if (head) {
-            const targetYaw = pointer.current.x * 0.5;
-            const targetPitch = pointer.current.y * 0.3;
-
-            head.rotation.y += (targetYaw - head.rotation.y) * 0.08;
-            head.rotation.x += (targetPitch - head.rotation.x) * 0.08;
+            head.rotation.y = pointer.current.x * 0.6;
+            head.rotation.x = pointer.current.y * 0.4;
         }
 
         // ==== BLINKING ====
         blinkTimer.current += delta;
-        if (blinkTimer.current > 3 + Math.random() * 2) {
+        // Blink more often when talking or thinking
+        const blinkThreshold = avatarState === 'thinking' ? 2 : 4;
+        if (blinkTimer.current > blinkThreshold + Math.random() * 2) {
             blinkTimer.current = 0;
             blinkValue.current = 1;
         }
         if (blinkValue.current > 0) {
-            blinkValue.current = Math.max(0, blinkValue.current - delta * 6);
+            blinkValue.current = Math.max(0, blinkValue.current - delta * 10); // Faster blink
         }
         if (vrm.expressionManager) {
             vrm.expressionManager.setValue("blink", blinkValue.current);
         }
 
-        // ==== BREATHING ====
-        breatheTime.current += delta * 1.2;
+        // ==== BREATHING & BODY SWAY ====
+        // Breathe faster when talking
+        const breatheSpeed = avatarState === 'talking' ? 2.5 : 1.2;
+        breatheTime.current += delta * breatheSpeed;
+
         const breathe = (Math.sin(breatheTime.current) + 1) * 0.02;
         const chest = vrm.humanoid?.getNormalizedBoneNode("chest");
         if (chest) {
             chest.position.y = breathe;
         }
 
-        // ==== INTERACTION PHYSICS ====
+        // ==== INTERACTION PHYSICS / IDLE MOTION ====
         const spine = vrm.humanoid?.getNormalizedBoneNode("spine");
         const leftArm = vrm.humanoid?.getNormalizedBoneNode("leftUpperArm");
         const rightArm = vrm.humanoid?.getNormalizedBoneNode("rightUpperArm");
 
         if (spine && leftArm && rightArm) {
-            const state = physicsState.current;
-            const target = new THREE.Vector2(pointer.current.x, pointer.current.y).multiplyScalar(0.3);
-            const stiffness = 8;
-            const damping = 4;
-
-            const forceX = -stiffness * (state.offset.x - target.x);
-            const forceY = -stiffness * (state.offset.y - target.y);
-
-            state.velocity.x += forceX * delta;
-            state.velocity.y += forceY * delta;
-
-            state.velocity.x *= 1 - damping * delta;
-            state.velocity.y *= 1 - damping * delta;
-
-            state.offset.x += state.velocity.x * delta;
-            state.offset.y += state.velocity.y * delta;
-
-            const swayX = state.offset.x * 0.3;
-            const swayY = state.offset.y * 0.3;
+            // Base sway
+            const swayAmount = avatarState === 'talking' ? 0.05 : 0.02;
+            const swayX = Math.sin(t * 0.5) * swayAmount;
+            const swayY = Math.cos(t * 0.3) * swayAmount;
 
             spine.rotation.z = swayX;
-            spine.rotation.x = swayY * 0.5;
+            spine.rotation.x = swayY;
 
-            // Natural arm hang (approx 80 degrees down) + sway
-            // VRM 1.0 standard: Arms are T-pose at 0. Rotate Z to bring them down.
-            // Left arm: rotate negative Z. Right arm: rotate positive Z.
-            leftArm.rotation.z = -1.4 + -swayX * 0.5;
-            rightArm.rotation.z = 1.4 + -swayX * 0.5;
+            // Arms
+            // Natural hang
+            let leftArmTargetZ = -1.4; // ~80 deg down
+            let rightArmTargetZ = 1.4;
 
-            // Slight arm swing with breathing
-            leftArm.rotation.x = Math.sin(breatheTime.current) * 0.05;
-            rightArm.rotation.x = Math.sin(breatheTime.current) * 0.05;
+            // Gestures when talking
+            if (avatarState === 'talking') {
+                leftArmTargetZ += Math.sin(t * 3) * 0.1;
+                rightArmTargetZ -= Math.sin(t * 3) * 0.1;
+
+                // Occasional emphasis
+                if (Math.sin(t * 1) > 0.8) {
+                    rightArm.rotation.x = Math.sin(t * 5) * 0.2;
+                }
+            }
+
+            leftArm.rotation.z = leftArmTargetZ + swayX * 0.5;
+            rightArm.rotation.z = rightArmTargetZ + swayX * 0.5;
+
+            // Breathing effect on arms
+            leftArm.rotation.x = Math.sin(breatheTime.current) * 0.03;
+            rightArm.rotation.x = Math.sin(breatheTime.current) * 0.03;
         }
 
         // ==== LIP-SYNC VISEMES ====

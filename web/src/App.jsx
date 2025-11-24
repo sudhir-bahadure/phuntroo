@@ -251,6 +251,7 @@ function App() {
                     />
                 </div>
                 <p>{loadingProgress.toFixed(1)}%</p>
+
                 <small>This happens only once. Please wait.</small>
             </div>
         );
