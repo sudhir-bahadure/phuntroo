@@ -1,19 +1,26 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { VRMAvatar } from "./VRMAvatar";
 import { OrbitControls } from '@react-three/drei';
 
-// Assuming visemeMapping is defined elsewhere or imported
-// If not, we can define a simple one or import it. 
-// Since the previous code used visemeMapping[viseme], let's assume it's needed.
-// However, in the previous valid code, it was imported or defined.
-// Let's check imports. The previous file didn't import it. 
-// But VRMAvatar takes visemeIndex.
-// Let's define a basic mapping here to be safe, or import it if we know where it is.
-// The user's task.md mentioned `visemeMapping.js` utility.
-import { visemeMapping } from "../../utils/visemeMapping";
+export default function AvatarCanvas({ expression, visemes, avatarState }) {
+    const [visemeIndex, setVisemeIndex] = useState(0);
 
-export default function AvatarCanvas({ expression, viseme, avatarState }) {
+    useEffect(() => {
+        if (!visemes) return;
+
+        const interval = setInterval(() => {
+            if (visemes.length > 0) {
+                const v = visemes.shift();
+                setVisemeIndex(v);
+            } else {
+                setVisemeIndex(0); // Reset to neutral if queue empty
+            }
+        }, 50); // Update every 50ms
+
+        return () => clearInterval(interval);
+    }, [visemes]);
+
     return (
         <Canvas
             camera={{ position: [0, 1.4, 1.5], fov: 40 }}
@@ -24,7 +31,7 @@ export default function AvatarCanvas({ expression, viseme, avatarState }) {
             <Suspense fallback={null}>
                 <VRMAvatar
                     expression={expression}
-                    visemeIndex={visemeMapping[viseme]}
+                    visemeIndex={visemeIndex}
                     avatarState={avatarState}
                 />
             </Suspense>
