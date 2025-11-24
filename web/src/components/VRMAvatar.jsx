@@ -80,6 +80,14 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
                     const objectName = obj.name?.toLowerCase() || '';
                     const combinedName = materialName + ' ' + objectName;
 
+                    // STRICT EXCLUSION: Never color skin, face, or body parts
+                    if (combinedName.includes('skin') || combinedName.includes('face') ||
+                        combinedName.includes('head') || combinedName.includes('body') ||
+                        combinedName.includes('hand') || combinedName.includes('leg') ||
+                        combinedName.includes('arm') || combinedName.includes('neck')) {
+                        return;
+                    }
+
                     // Apply colors - try multiple naming patterns + fallback
                     if (combinedName.includes('shirt') || combinedName.includes('top') ||
                         combinedName.includes('torso') ||
@@ -87,8 +95,7 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
                         material.color.setHex(parseInt(outfit.colors.primary.replace('#', ''), 16));
                         materialsChanged++;
                     } else if (combinedName.includes('pant') || combinedName.includes('bottom') ||
-                        combinedName.includes('skirt') || combinedName.includes('lower') ||
-                        combinedName.includes('leg')) {
+                        combinedName.includes('skirt') || combinedName.includes('lower')) {
                         material.color.setHex(parseInt(outfit.colors.secondary.replace('#', ''), 16));
                         materialsChanged++;
                     } else if (combinedName.includes('accessory') || combinedName.includes('detail') ||
@@ -97,9 +104,8 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
                         materialsChanged++;
                     } else {
                         // Fallback: apply primary color to any non-skin/hair material
-                        if (!combinedName.includes('face') && !combinedName.includes('hair') &&
-                            !combinedName.includes('skin') && !combinedName.includes('eye') &&
-                            !combinedName.includes('head')) {
+                        // Double check exclusions
+                        if (!combinedName.includes('hair') && !combinedName.includes('eye')) {
                             material.color.setHex(parseInt(outfit.colors.primary.replace('#', ''), 16));
                             materialsChanged++;
                         }
@@ -134,6 +140,11 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
         u: { ou: 1.0 }
     };
 
+    // Lip Sync State
+    const lastLipSyncTime = useRef(0);
+    const currentViseme = useRef('neutral');
+    const visemeList = ['aa', 'ih', 'ou', 'ee', 'oh'];
+
     useFrame((state, delta) => {
         if (!vrm) return;
 
@@ -146,10 +157,21 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
             const exp = expressions[expression] || {};
             Object.entries(exp).forEach(([k, v]) => manager.setValue(k, v));
 
-            // Apply viseme while talking
-            if (isTalking && viseme !== 'neutral') {
-                const vsm = visemes[viseme] || {};
-                Object.entries(vsm).forEach(([k, v]) => manager.setValue(k, v * 0.7));
+            // ==============================
+            // PSEUDO LIP SYNC
+            // ==============================
+            if (isTalking) {
+                // Update viseme every 100ms
+                if (state.clock.elapsedTime - lastLipSyncTime.current > 0.1) {
+                    currentViseme.current = visemeList[Math.floor(Math.random() * visemeList.length)];
+                    lastLipSyncTime.current = state.clock.elapsedTime;
+                }
+
+                // Apply the random viseme
+                const vsm = visemes[currentViseme.current] || {};
+                Object.entries(vsm).forEach(([k, v]) => manager.setValue(k, v * 0.8)); // 0.8 intensity
+            } else {
+                currentViseme.current = 'neutral';
             }
 
             // Blink
@@ -176,14 +198,14 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
             const neck = humanoid.getNormalizedBoneNode('neck');
             if (neck) {
                 if (isTalking) {
-                    // Active head bobbing while talking
-                    neck.rotation.x = Math.sin(t * 10) * 0.05;
-                    neck.rotation.y = Math.sin(t * 5) * 0.05;
-                    neck.rotation.z = Math.sin(t * 3) * 0.02;
+                    // Active head bobbing while talking - INCREASED INTENSITY
+                    neck.rotation.x = Math.sin(t * 12) * 0.08;
+                    neck.rotation.y = Math.sin(t * 6) * 0.08;
+                    neck.rotation.z = Math.sin(t * 4) * 0.03;
                 } else {
                     // Slow idle look around
-                    neck.rotation.x = Math.sin(t * 0.5) * 0.02;
-                    neck.rotation.y = Math.sin(t * 0.3) * 0.05;
+                    neck.rotation.x = Math.sin(t * 0.5) * 0.03;
+                    neck.rotation.y = Math.sin(t * 0.3) * 0.06;
                 }
             }
 
@@ -193,7 +215,6 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
 
             if (leftArm && rightArm) {
                 // Arms DOWN naturally (negative rotation) - FORCE ARMS DOWN
-                // 70-80 degrees down is more natural than 30
                 leftArm.rotation.z = -Math.PI / 2.5;
                 rightArm.rotation.z = Math.PI / 2.5;
 
@@ -202,9 +223,13 @@ function VRMAvatarModel({ expression = 'neutral', isTalking = false, viseme = 'n
                 rightArm.rotation.x = Math.sin(t * 1 + Math.PI) * 0.05;
 
                 if (isTalking) {
-                    // Gestures while talking
-                    rightArm.rotation.z = (Math.PI / 2.5) + Math.sin(t * 5) * 0.1;
-                    rightArm.rotation.x = Math.sin(t * 3) * 0.2;
+                    // Gestures while talking - INCREASED INTENSITY
+                    // Right arm emphasizes speech
+                    rightArm.rotation.z = (Math.PI / 2.5) + Math.sin(t * 8) * 0.15;
+                    rightArm.rotation.x = Math.sin(t * 5) * 0.25;
+
+                    // Left arm slight movement
+                    leftArm.rotation.z = -(Math.PI / 2.5) - Math.sin(t * 6) * 0.05;
                 }
             }
         }
