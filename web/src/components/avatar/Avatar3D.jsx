@@ -1,5 +1,5 @@
 import React from "react";
-import { AvatarCanvas } from "./AvatarCanvas";
+import AvatarCanvas from "./AvatarCanvas";
 
 export default function Avatar3D({ expression, visemes, avatarState }) {
     return (

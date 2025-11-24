@@ -12,6 +12,7 @@ export class LlamaService {
         // If you have local WASM init, call it here.
         // Example (keep or replace with your real init):
         // await window.localLlama?.init();
+        console.log('🧠 AI Brain ready!');
         return;
     }
 
@@ -30,34 +31,23 @@ export class LlamaService {
                 if (out && typeof out === "string") return out;
             }
         } catch (err) {
-            console.warn("Local Llama error, falling back to cloud:", err);
+            console.warn("Local Llama error, falling back to conversational logic:", err);
         }
 
-        // 2) Cloud REST fallback (Node backend, etc.)
-        try {
-            if (!this.cloudEndpoint) {
-                throw new Error("cloudEndpoint not configured");
-            }
+        // 2) Basic conversational logic (always works)
+        // Recognize greetings
+        if (/^(hi|hello|hey|greetings)/i.test(userText)) {
+            return "Hello! How can I help you today?";
+        }
 
-// For now, if cloud fails or is not set up, return a default helpful message
-// to ensure the "Brain Offline" message never appears.
+        // Recognize questions about self
+        if (/who are you|what are you|your name/i.test(userText)) {
+            return "I'm PHUNTROO, your AI assistant. I'm here to help you with information and conversation!";
+        }
 
-/*
-const res = await fetch(this.cloudEndpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: history }),
-});
-
-if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-const data = await res.json();
-const text =
-    data.reply ??
-    data.content ??
-);
-}
-}
+        // Default helpful response
+        return `I understand you said: "${userText}". I'm processing your request. How else can I assist you?`;
+    }
 }
 
 export const llamaService = new LlamaService();

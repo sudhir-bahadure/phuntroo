@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Avatar3D } from './components/avatar/Avatar3D';
+import Avatar3D from './components/avatar/Avatar3D';
 import ChatInterface from './components/ChatInterface';
 import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
