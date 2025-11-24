@@ -85,46 +85,52 @@ class TTSService {
             return Promise.resolve();
         }
 
-        return new Promise((resolve, reject) => {
-            // Cancel any ongoing speech
-            this.synth.cancel();
-            this.visemeQueue.length = 0; // Clear queue
+        // Cancel any ongoing speech first
+        this.synth.cancel();
+        this.visemeQueue.length = 0;
 
-            const utterance = new SpeechSynthesisUtterance(text);
+        return new Promise((resolve) => {
+            // Small delay to ensure cancel completes
+            setTimeout(() => {
+                const utterance = new SpeechSynthesisUtterance(text);
 
-            // Set voice
-            if (this.voice) {
-                utterance.voice = this.voice;
-            }
-
-            // Set parameters
-            utterance.rate = options.rate || 1.0;
-            utterance.pitch = options.pitch || 1.0;
-            utterance.volume = options.volume || 1.0;
-
-            // Event handlers
-            utterance.onend = () => {
-                console.log('🔊 Speech finished');
-                this.visemeQueue.length = 0;
-                resolve();
-            };
-
-            utterance.onerror = (error) => {
-                console.error('Speech error:', error);
-                reject(error);
-            };
-
-            // Viseme generation on boundary
-            utterance.onboundary = (ev) => {
-                if (ev.name === 'word' || ev.name === 'sentence') {
-                    const charIndex = ev.charIndex;
-                    const char = text[charIndex] || ' ';
-                    this.visemeQueue.push(charToViseme(char));
+                // Set voice
+                if (this.voice) {
+                    utterance.voice = this.voice;
                 }
-            };
 
-            // Speak
-            this.synth.speak(utterance);
+                // Set parameters
+                utterance.rate = options.rate || 1.0;
+                utterance.pitch = options.pitch || 1.1;
+                utterance.volume = options.volume || 1.0;
+
+                // Event handlers
+                utterance.onend = () => {
+                    console.log('🔊 Speech finished');
+                    this.visemeQueue.length = 0;
+                    resolve();
+                };
+
+                // Better error handling - don't fail on interruption
+                utterance.onerror = (error) => {
+                    if (error.error !== 'interrupted' && error.error !== 'canceled') {
+                        console.warn('TTS error:', error.error);
+                    }
+                    resolve(); // Always resolve, never reject
+                };
+
+                // Viseme generation on boundary
+                utterance.onboundary = (ev) => {
+                    if (ev.name === 'word' || ev.name === 'sentence') {
+                        const charIndex = ev.charIndex;
+                        const char = text[charIndex] || ' ';
+                        this.visemeQueue.push(charToViseme(char));
+                    }
+                };
+
+                // Speak
+                this.synth.speak(utterance);
+            }, 150); // Delay prevents interruption errors
         });
     }
 
