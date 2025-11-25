@@ -1,0 +1,101 @@
+name: Evolve Phuntroo Friend
+on:
+  schedule:
+    # Run every 6 hours (free tier friendly)
+    - cron: '0 */6 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  evolve:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Fetch and analyze chat logs
+        id: analyze
+        run: |
+          # Read memory.json
+          if [ -f "web/public/memory.json" ]; then
+            CHAT_COUNT=$(cat web/public/memory.json | jq '.chatHistory | length')
+            echo "Found $CHAT_COUNT chat messages"
+            
+            # Extract recent conversations for analysis
+            RECENT_CHATS=$(cat web/public/memory.json | jq -r '.chatHistory[-10:] | .[] | "User: \(.text // "N/A") | AI: \(.reply // "N/A")"')
+            echo "recent_chats<<EOF" >> $GITHUB_OUTPUT
+            echo "$RECENT_CHATS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "No memory file found yet"
+            echo "recent_chats=" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Query Hugging Face for evolution suggestions
+        if: steps.analyze.outputs.recent_chats != ''
+        id: hf_inference
+        run: |
+          # Use Hugging Face Inference API (free for public models)
+          PROMPT="You are an AI evolution advisor. Analyze these recent conversations from Phuntroo, an AI friend:
+
+          ${{ steps.analyze.outputs.recent_chats }}
+
+          Suggest ONE small improvement to make Phuntroo more friendly, empathetic, or helpful.
+          Focus on personality improvements, not code changes.
+          Output ONLY a JSON object: {\"improvement\": \"description\", \"reasoning\": \"why this helps\"}"
+          
+          # Note: This is a placeholder - actual HF API call would require authentication
+          # For now, we'll use a simpler approach
+          echo 'suggestion={"improvement": "Add more encouraging phrases when user seems stressed", "reasoning": "Shows empathy and support"}' >> $GITHUB_OUTPUT
+      
+      - name: Search for new free resources
+        id: search_resources
+        run: |
+          # Query Hugging Face API for trending models
+          curl -s "https://huggingface.co/api/models?sort=trending&limit=5&filter=text-generation" \
+            | jq '[.[] | {name: .modelId, downloads: .downloads}]' \
+            > web/public/trending_models.json || echo "[]" > web/public/trending_models.json
+          
+          echo "Resource search complete"
+      
+      - name: Log evolution event
+        run: |
+          # Update evolution log in memory.json
+          if [ -f "web/public/memory.json" ]; then
+            TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            SUGGESTION='${{ steps.hf_inference.outputs.suggestion }}'
+            
+            # Add to evolution log
+            jq --arg ts "$TIMESTAMP" --arg sugg "$SUGGESTION" \
+              '.evolutionLog = .evolutionLog + "\n[" + $ts + "] Evolution check: " + $sugg' \
+              web/public/memory.json > web/public/memory.tmp.json
+            
+            mv web/public/memory.tmp.json web/public/memory.json
+          fi
+      
+      - name: Commit evolution updates
+        run: |
+          git config --local user.email "phuntroo-bot@github.com"
+          git config --local user.name "Phuntroo Evolution Bot"
+          
+          git add web/public/memory.json web/public/trending_models.json || true
+          git diff --quiet && git diff --staged --quiet || \
+            git commit -m "🧬 Auto-evolution: ${{ steps.hf_inference.outputs.suggestion || 'Resource update' }}"
+      
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+      
+      - name: Survival checkpoint
+        if: failure()
+        run: |
+          echo "Evolution paused - will retry in 6 hours"
+          echo "Cached logic remains active"
+          git commit --allow-empty -m "🔄 Survival checkpoint - retrying evolution later" || true

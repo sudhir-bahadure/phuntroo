@@ -1,0 +1,16 @@
+{
+    "userPrefs": {
+        "name": "Sudhir",
+        "mood": "curious",
+        "likes": [],
+        "conversationStyle": "friendly",
+        "timezone": "Asia/Kolkata"
+    },
+    "chatHistory": [],
+    "evolutionLog": "Started as your friend on 2025-11-25. Initial personality: warm, supportive, funny.",
+    "metadata": {
+        "version": "1.0",
+        "lastSync": "",
+        "totalInteractions": 0
+    }
+}
