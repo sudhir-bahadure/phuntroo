@@ -4,8 +4,8 @@
 class CloudLlamaService {
     constructor() {
         this.conversationHistory = [];
-        // Use Cloudflare Worker to avoid CORS issues - 100% free!
-        this.apiUrl = 'https://phuntroo-ai-proxy.sudhir1100200426.workers.dev';
+        // Use direct HuggingFace API (CORS might be an issue on some networks, but proxy is dead)
+        this.apiUrl = 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2';
     }
 
     async initialize(onProgress) {

@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { VRMUtils, VRMLoaderPlugin } from "@pixiv/three-vrm";
 import { GLTFLoader } from 'three-stdlib';
 // import { useVRMAnimations } from '../../hooks/useVRMAnimations';
-// import { movementController } from '../../utils/MovementController';
+import { movementController } from '../../utils/MovementController';
 // import { autonomyManager } from '../../services/autonomy/AutonomyManager';
 
 const VISEME_NAMES = ["aa", "ih", "ou", "ee", "oh", "sil"];
