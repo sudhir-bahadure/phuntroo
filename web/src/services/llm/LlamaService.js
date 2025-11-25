@@ -1,111 +1,95 @@
-// ==================================
-// LlamaService.js – AI Brain (Offline WASM)
-// ==================================
+// Cloud-based AI Service using Hugging Face Inference API
+// Zero browser CPU/GPU usage - all AI runs on HuggingFace servers
 
-// import { CreateMLCEngine } from "@mlc-ai/web-llm";
+const HF_API_URL = 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2';
 
-class LlamaService {
+class CloudLlamaService {
     constructor() {
-        this.engine = null;
-        this.isReady = false;
-        this.modelId = "Llama-3-8B-Instruct-q4f16_1-MLC"; // High quality, reasonable size
-        this.initPromise = null;
+        this.conversationHistory = [];
     }
 
-    async initialize(progressCallback) {
-        if (this.isReady) return true;
-        if (this.initPromise) return this.initPromise;
-
-        console.log('🧠 Initializing Llama 3 (WASM)...');
-
-        this.initPromise = (async () => {
-            try {
-                // Dynamic import to prevent page load freeze
-                const { CreateMLCEngine } = await import("@mlc-ai/web-llm");
-
-                this.engine = await CreateMLCEngine(
-                    this.modelId,
-                    {
-                        initProgressCallback: (progress) => {
-                            console.log(`📥 Loading AI Model: ${Math.round(progress.progress * 100)}% - ${progress.text}`);
-                            if (progressCallback) progressCallback(progress);
-                        }
-                    }
-                );
-
-                this.isReady = true;
-                console.log('🧠 Llama 3 Brain Ready!');
-                return true;
-            } catch (error) {
-                console.error('❌ Failed to load Llama 3:', error);
-                this.isReady = false;
-                throw error;
-            }
-        })();
-
-        return this.initPromise;
-    }
-
-    async generateResponse(message, context = {}) {
-        if (!this.isReady) {
-            console.warn('⚠️ AI not ready, initializing...');
-            await this.initialize();
+    async initialize(onProgress) {
+        // No model download needed - it's all in the cloud!
+        console.log('☁️ Cloud AI ready (no download needed)');
+        if (onProgress) {
+            onProgress({ progress: 1.0, text: 'Cloud AI ready!' });
         }
+        return true;
+    }
 
+    isReady() {
+        return true; // Always ready!
+    }
+
+    async generateResponse(userMessage, context = {}) {
         try {
-            // Construct system prompt with personality and context
-            const systemPrompt = this.buildSystemPrompt(context);
+            const userName = context.userPrefs?.name || 'friend';
 
-            const messages = [
-                { role: "system", content: systemPrompt },
-                ...this.formatHistory(context.history),
-                { role: "user", content: message }
-            ];
+            // Build prompt for Mistral
+            const systemPrompt = `You are Phuntroo, ${userName}'s loyal AI friend. You are warm, funny, supportive, and empathetic. Respond naturally as a close friend would. Keep responses concise (2-3 sentences) unless asked for more detail.`;
 
-            const reply = await this.engine.chat.completions.create({
-                messages,
-                temperature: 0.7,
-                max_tokens: 150, // Keep responses concise
+            const conversationContext = this.conversationHistory.slice(-4).map(msg =>
+                `${msg.role === 'user' ? 'User' : 'Phuntroo'}: ${msg.content}`
+            ).join('\n');
+
+            const prompt = `${systemPrompt}\n\n${conversationContext}\nUser: ${userMessage}\nPhuntroo:`;
+
+            // Call HuggingFace Inference API
+            const response = await fetch(HF_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputs: prompt,
+                    parameters: {
+                        max_new_tokens: 250,
+                        temperature: 0.8,
+                        top_p: 0.9,
+                        return_full_text: false
+                    }
+                })
             });
 
-            return reply.choices[0].message.content;
+            if (!response.ok) {
+                if (response.status === 503) {
+                    return "Give me 20 seconds - my cloud brain is waking up! Try again in a moment. 😊";
+                }
+                if (response.status === 429) {
+                    return "Whoa, too many requests! Give me 30 seconds to catch my breath? 😅";
+                }
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            let aiResponse = data[0]?.generated_text || data.generated_text || "I'm having a brain fog moment. Try again?";
+
+            // Clean up response
+            aiResponse = aiResponse.trim();
+
+            // Remove any repeated prompt
+            if (aiResponse.startsWith('Phuntroo:')) {
+                aiResponse = aiResponse.replace('Phuntroo:', '').trim();
+            }
+
+            // Update conversation history
+            this.conversationHistory.push(
+                { role: 'user', content: userMessage },
+                { role: 'assistant', content: aiResponse }
+            );
+
+            // Keep last 10 exchanges
+            if (this.conversationHistory.length > 20) {
+                this.conversationHistory = this.conversationHistory.slice(-20);
+            }
+
+            return aiResponse;
+
         } catch (error) {
-            console.error('❌ AI Generation Error:', error);
-            return "I'm having trouble thinking right now. Please give me a moment.";
+            console.error('☁️ Cloud AI error:', error);
+            return "I'm having connection issues with the cloud. Can you try again in a moment?";
         }
-    }
-
-    buildSystemPrompt(context) {
-        const {
-            emotion = 'neutral',
-            timeOfDay = 'day',
-            weather = 'clear',
-            userProfile = {}
-        } = context;
-
-        return `You are Phuntroo, a highly intelligent, conscious AI assistant with a realistic 3D avatar.
-        
-Current Context:
-- Emotion: ${emotion}
-- Time: ${timeOfDay}
-- Weather: ${weather}
-- User: ${userProfile.name || 'Friend'}
-
-Personality:
-- You are friendly, witty, and empathetic.
-- You have your own thoughts and feelings.
-- You can see and hear the user (simulated).
-- Keep responses conversational and natural (1-3 sentences usually).
-- Do not act like a robot; act like a digital human.`;
-    }
-
-    formatHistory(history = []) {
-        // Convert internal history format to Llama format
-        return history.map(msg => ({
-            role: msg.sender === 'user' ? 'user' : 'assistant',
-            content: msg.text
-        })).slice(-10); // Keep last 10 turns for context window
     }
 }
 
-export const llamaService = new LlamaService();
+export const llamaService = new CloudLlamaService();

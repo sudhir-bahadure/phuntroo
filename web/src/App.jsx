@@ -44,7 +44,7 @@ function App() {
                 setMessages([greeting]);
 
                 // Initialize AI brain
-                setStatus('Loading my brain...');
+                setStatus('Connecting to cloud AI...');
                 await llamaService.initialize((progress) => {
                     setLoadingProgress(progress.progress * 100);
                 });
@@ -205,7 +205,7 @@ function App() {
         return (
             <div className="loading-screen">
                 <h1>👋 Hey! Phuntroo waking up...</h1>
-                <p>Loading my brain so we can chat!</p>
+                <p>Connecting to cloud AI - no download needed! ☁️</p>
                 <div className="progress-bar">
                     <div
                         className="progress-fill"
@@ -213,7 +213,7 @@ function App() {
                     />
                 </div>
                 <p>{loadingProgress.toFixed(1)}%</p>
-                <small>This happens once, then I'm cached 😊</small>
+                <small>Cloud AI - instant, no downloads, works anywhere! 🚀</small>
             </div>
         );
     }
