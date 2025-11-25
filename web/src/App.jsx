@@ -243,6 +243,7 @@ function App() {
                                         isRecording ? 'listening' :
                                             'idle'
                             }
+                            url="/phuntroo/models/avatar.vrm"
                         />
                     </div>
                 </div>
