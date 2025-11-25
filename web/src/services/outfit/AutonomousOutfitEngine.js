@@ -1,6 +1,10 @@
+import { AVATAR_MODELS } from '../../constants/AvatarModels';
 /**
  * Autonomous Outfit Engine - AI searches and wears outfits on her own
  */
+
+import { weatherService } from '../weather/WeatherService';
+import { llamaService } from '../llm/LlamaService';
 
 class AutonomousOutfitEngine {
     constructor(webSearchSkill) {
@@ -14,20 +18,22 @@ class AutonomousOutfitEngine {
      * AI decides to change outfit based on context
      */
     async decideOutfitChange(context = {}) {
-        const {
-            userMessage = '',
-            emotion = 'neutral',
-            timeOfDay = this.getTimeOfDay(),
-            weather = 'clear',
-            occasion = 'casual'
-        } = context;
+        // Enrich context with real weather
+        const weatherData = await weatherService.getCurrentWeather();
+
+        const richContext = {
+            ...context,
+            weather: weatherData.condition,
+            temperature: weatherData.temperature,
+            isDay: weatherData.isDay
+        };
 
         // Decide if outfit change is needed
-        const shouldChange = this.shouldChangeOutfit(context);
+        const shouldChange = this.shouldChangeOutfit(richContext);
 
         if (shouldChange) {
-            const outfitType = this.determineOutfitType(context);
-            return await this.searchAndWearOutfit(outfitType, context);
+            const outfitType = this.determineOutfitType(richContext);
+            return await this.searchAndWearOutfit(outfitType, richContext);
         }
 
         return null;
@@ -37,14 +43,21 @@ class AutonomousOutfitEngine {
      * Determine if outfit change is appropriate
      */
     shouldChangeOutfit(context) {
-        const { userMessage = '', emotion = 'neutral' } = context;
-        const lowerMsg = userMessage.toLowerCase();
+        const { userMessage = '', emotion = 'neutral', weather = 'clear' } = context;
+        const lowerMsg = typeof userMessage === 'string' ? userMessage.toLowerCase() : '';
 
         // User explicitly asks
         if (lowerMsg.includes('change outfit') ||
             lowerMsg.includes('wear') ||
-            lowerMsg.includes('dress')) {
+            lowerMsg.includes('dress') ||
+            lowerMsg.includes('change avatar')) {
             return true;
+        }
+
+        // Weather-based changes (e.g. if it starts raining)
+        if (weather === 'rainy' || weather === 'stormy') {
+            // Check if we are already wearing rain gear? (Simplified: 50% chance to change if bad weather)
+            return Math.random() > 0.5;
         }
 
         // Mood-based changes
@@ -66,7 +79,18 @@ class AutonomousOutfitEngine {
      * Determine what type of outfit to wear
      */
     determineOutfitType(context) {
-        const { emotion = 'neutral', timeOfDay = this.getTimeOfDay() } = context;
+        const { emotion = 'neutral', timeOfDay = this.getTimeOfDay(), weather = 'clear', temperature = 20 } = context;
+
+        // Weather priority
+        if (weather === 'rainy' || weather === 'stormy') {
+            return ['raincoat', 'waterproof jacket', 'cozy indoor outfit'][Math.floor(Math.random() * 3)];
+        }
+        if (weather === 'snowy' || temperature < 10) {
+            return ['winter coat', 'warm sweater', 'scarf and jacket'][Math.floor(Math.random() * 3)];
+        }
+        if (temperature > 25 && weather === 'clear') {
+            return ['summer dress', 'light top', 'beachwear'][Math.floor(Math.random() * 3)];
+        }
 
         // Emotion-based
         if (emotion === 'happy' || emotion === 'joy') {
@@ -98,12 +122,29 @@ class AutonomousOutfitEngine {
         console.log(`👗 AI searching for: ${outfitType}`);
 
         try {
-            // Search for outfit inspiration
-            const searchQuery = `${outfitType} fashion 2024`;
-            const searchResults = await this.webSearch.search(searchQuery);
+            // Try Web Search first (if available)
+            let searchResults = [];
+            if (this.webSearch) {
+                try {
+                    const searchQuery = `${outfitType} fashion 2024`;
+                    searchResults = await this.webSearch.search(searchQuery);
+                } catch (e) {
+                    console.warn('Web search failed, falling back to AI imagination');
+                }
+            }
 
-            // Generate outfit based on search results
-            const outfit = this.generateOutfitFromSearch(outfitType, searchResults);
+            let outfit;
+            if (searchResults.length > 0) {
+                outfit = this.generateOutfitFromSearch(outfitType, searchResults);
+            } else {
+                // Fallback: Ask Llama 3 to imagine an outfit
+                outfit = await this.generateOutfitFromAI(outfitType, context);
+            }
+
+            // Select appropriate VRM model
+            const selectedModel = this.selectModelForOutfit(outfit, context);
+            outfit.modelUrl = selectedModel.url;
+            outfit.modelName = selectedModel.name;
 
             // Store in history
             this.outfitHistory.push({
@@ -118,9 +159,64 @@ class AutonomousOutfitEngine {
 
             return outfit;
         } catch (error) {
-            console.warn('Outfit search failed:', error);
+            console.warn('Outfit generation failed:', error);
             return this.generateRandomOutfit(outfitType);
         }
+    }
+
+    /**
+     * Ask Llama 3 to imagine an outfit
+     */
+    async generateOutfitFromAI(outfitType, context) {
+        const prompt = `Imagine a stylish ${outfitType} outfit for a 3D avatar. 
+        Describe it briefly in 1 sentence. 
+        Also suggest 3 hex color codes for it.
+        Format: Description | #Color1, #Color2, #Color3`;
+
+        try {
+            const response = await llamaService.generateResponse(prompt, context);
+            const [desc, colorsStr] = response.split('|');
+
+            const colors = colorsStr ? colorsStr.split(',').map(c => c.trim()) : [];
+
+            return {
+                name: this.capitalizeWords(outfitType),
+                description: desc ? desc.trim() : `A stylish ${outfitType}`,
+                colors: {
+                    primary: colors[0] || this.getRandomColor(),
+                    secondary: colors[1] || this.getRandomColor(),
+                    accent: colors[2] || this.getRandomColor()
+                },
+                style: 'modern',
+                mood: this.getMoodFromOutfit(outfitType),
+                searchBased: false,
+                aiGenerated: true
+            };
+        } catch (e) {
+            console.warn('AI outfit generation failed:', e);
+            return this.generateRandomOutfit(outfitType);
+        }
+    }
+
+    selectModelForOutfit(outfit, context) {
+        // Simple logic to map outfit/mood to available models
+        // In a real scenario, we might have metadata on models saying what they are wearing
+
+        const style = outfit.style.toLowerCase();
+        const mood = outfit.mood.toLowerCase();
+        const description = outfit.description.toLowerCase();
+
+        // Check for specific keywords mapping to our 3 models
+        if (style.includes('tech') || style.includes('future') || description.includes('robot') || description.includes('cyber')) {
+            return AVATAR_MODELS.find(m => m.id === 'robot') || AVATAR_MODELS[0];
+        }
+
+        if (mood === 'party' || style.includes('cute') || description.includes('anime')) {
+            return AVATAR_MODELS.find(m => m.id === 'anime_girl') || AVATAR_MODELS[0];
+        }
+
+        // Default to original or random if we had more
+        return AVATAR_MODELS.find(m => m.id === 'default') || AVATAR_MODELS[0];
     }
 
     /**

@@ -1,52 +1,110 @@
 // ==================================
-// LlamaService.js – AI Brain Online
+// LlamaService.js – AI Brain (Offline WASM)
 // ==================================
 
-export class LlamaService {
-    constructor(opts = {}) {
-        this.cloudEndpoint = opts.cloudEndpoint ?? "/api/chat";
+// import { CreateMLCEngine } from "@mlc-ai/web-llm";
+
+class LlamaService {
+    constructor() {
+        this.engine = null;
+        this.isReady = false;
+        this.modelId = "Llama-3-8B-Instruct-q4f16_1-MLC"; // High quality, reasonable size
+        this.initPromise = null;
     }
 
-    // Initialise local or cloud brain if needed
-    async initialize() {
-        // If you have local WASM init, call it here.
-        // Example (keep or replace with your real init):
-        // await window.localLlama?.init();
-        console.log('🧠 AI Brain ready!');
-        return;
-    }
+    async initialize(progressCallback) {
+        if (this.isReady) return true;
+        if (this.initPromise) return this.initPromise;
 
-    /**
-     * Main chat call – ALWAYS active.
-     * No maintenance / offline fallback.
-     */
-    async generateResponse(history) {
-        const lastUser = history.filter(m => m.role === "user").pop();
-        const userText = lastUser?.content ?? "";
+        console.log('🧠 Initializing Llama 3 (WASM)...');
 
-        // 1) Try local WASM brain if available
-        try {
-            if (window.localLlama && typeof window.localLlama.generate === "function") {
-                const out = await window.localLlama.generate(history);
-                if (out && typeof out === "string") return out;
+        this.initPromise = (async () => {
+            try {
+                // Dynamic import to prevent page load freeze
+                const { CreateMLCEngine } = await import("@mlc-ai/web-llm");
+
+                this.engine = await CreateMLCEngine(
+                    this.modelId,
+                    {
+                        initProgressCallback: (progress) => {
+                            console.log(`📥 Loading AI Model: ${Math.round(progress.progress * 100)}% - ${progress.text}`);
+                            if (progressCallback) progressCallback(progress);
+                        }
+                    }
+                );
+
+                this.isReady = true;
+                console.log('🧠 Llama 3 Brain Ready!');
+                return true;
+            } catch (error) {
+                console.error('❌ Failed to load Llama 3:', error);
+                this.isReady = false;
+                throw error;
             }
-        } catch (err) {
-            console.warn("Local Llama error, falling back to conversational logic:", err);
+        })();
+
+        return this.initPromise;
+    }
+
+    async generateResponse(message, context = {}) {
+        if (!this.isReady) {
+            console.warn('⚠️ AI not ready, initializing...');
+            await this.initialize();
         }
 
-        // 2) Basic conversational logic (always works)
-        // Recognize greetings
-        if (/^(hi|hello|hey|greetings)/i.test(userText)) {
-            return "Hello! How can I help you today?";
-        }
+        try {
+            // Construct system prompt with personality and context
+            const systemPrompt = this.buildSystemPrompt(context);
 
-        // Recognize questions about self
-        if (/who are you|what are you|your name/i.test(userText)) {
-            return "I'm PHUNTROO, your AI assistant. I'm here to help you with information and conversation!";
-        }
+            const messages = [
+                { role: "system", content: systemPrompt },
+                ...this.formatHistory(context.history),
+                { role: "user", content: message }
+            ];
 
-        // Default helpful response
-        return `I understand you said: "${userText}". I'm processing your request. How else can I assist you?`;
+            const reply = await this.engine.chat.completions.create({
+                messages,
+                temperature: 0.7,
+                max_tokens: 150, // Keep responses concise
+            });
+
+            return reply.choices[0].message.content;
+        } catch (error) {
+            console.error('❌ AI Generation Error:', error);
+            return "I'm having trouble thinking right now. Please give me a moment.";
+        }
+    }
+
+    buildSystemPrompt(context) {
+        const {
+            emotion = 'neutral',
+            timeOfDay = 'day',
+            weather = 'clear',
+            userProfile = {}
+        } = context;
+
+        return `You are Phuntroo, a highly intelligent, conscious AI assistant with a realistic 3D avatar.
+        
+Current Context:
+- Emotion: ${emotion}
+- Time: ${timeOfDay}
+- Weather: ${weather}
+- User: ${userProfile.name || 'Friend'}
+
+Personality:
+- You are friendly, witty, and empathetic.
+- You have your own thoughts and feelings.
+- You can see and hear the user (simulated).
+- Keep responses conversational and natural (1-3 sentences usually).
+- Do not act like a robot; act like a digital human.`;
+    }
+
+    formatHistory(history = []) {
+        // Convert internal history format to Llama format
+        return history.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text
+        })).slice(-10); // Keep last 10 turns for context window
     }
 }
 

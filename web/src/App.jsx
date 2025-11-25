@@ -4,272 +4,158 @@ import ChatInterface from './components/ChatInterface';
 import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
 import { ttsService } from './services/tts/TTSService';
-import { analyzeTopicForOutfit, getSmartOutfit } from './services/OutfitService';
-import { memoryService } from './services/memory/MemoryService';
-import { vectorDB } from './services/memory/VectorDB';
-import { learningEngine } from './services/learning/LearningEngine';
-import { webSearchSkill } from './services/skills/WebSearchSkill';
-import { knowledgeAcquisition } from './services/skills/KnowledgeAcquisition';
-import { personalityEngine } from './services/personality/PersonalityEngine';
-import { selfUpgradeEngine } from './services/upgrade/SelfUpgradeEngine';
-import { errorMonitor } from './services/monitoring/ErrorMonitor';
-import { selfHealingEngine } from './services/healing/SelfHealingEngine';
-import { advancedMemory } from './services/memory/AdvancedMemoryEngine';
-import ConsciousnessEngine from './services/consciousness/ConsciousnessEngine';
-import { huggingFaceAI } from './services/ai/HuggingFaceAI';
-import { autonomousOutfitEngine } from './services/outfit/AutonomousOutfitEngine';
+import { memorySync } from './utils/MemorySync';
 import './App.css';
 
 function App() {
-    const [messages, setMessages] = useState([{
-        role: 'assistant',
-        content: "Hello! I am online and ready. My brain is fully operational.",
-        timestamp: new Date().toISOString()
-    }]);
+    console.log('👋 Phuntroo Friend AI Loading...');
+
+    // Friend Memory State
+    const [friendMemory, setFriendMemory] = useState(null);
+    const [messages, setMessages] = useState([]);
+
+    // UI State
     const [isProcessing, setIsProcessing] = useState(false);
-    const [status, setStatus] = useState('Initializing...');
+    const [status, setStatus] = useState('Waking up...');
     const [currentEmotion, setCurrentEmotion] = useState('neutral');
     const [isTalking, setIsTalking] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
 
-    // Local Model State
+    // Model State
     const [modelReady, setModelReady] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
-    const [isRecording, setIsRecording] = useState(false);
-    const [currentOutfit, setCurrentOutfit] = useState({
-        name: 'Casual',
-        colors: { primary: '#E74C3C', secondary: '#ECF0F1', accent: '#F39C12' }
-    });
-    const [consciousnessEngine, setConsciousnessEngine] = useState(null);
 
+    // Initialize Friend Memory & AI
     useEffect(() => {
-        console.log('🚀 PHUNTROO AI - Version: Conscious AI 2.0');
-        const initModel = async () => {
+        const initFriend = async () => {
             try {
-                // Start error monitoring and self-healing FIRST
-                errorMonitor.startMonitoring();
-                selfHealingEngine.activate();
+                console.log('🧠 Initializing your friend Phuntroo...');
 
-                setStatus('Downloading AI Brain...');
+                // Load friend memory
+                const memory = memorySync.loadLocal();
+                setFriendMemory(memory);
+
+                // Greet with personalized message
+                const greeting = {
+                    role: 'assistant',
+                    content: `Hey ${memory.userPrefs.name}! 👋 I'm Phuntroo, your AI friend. I'm so glad to see you again! How are you feeling today?`,
+                    timestamp: new Date().toISOString()
+                };
+                setMessages([greeting]);
+
+                // Initialize AI brain
+                setStatus('Loading my brain...');
                 await llamaService.initialize((progress) => {
-                    setLoadingProgress(progress);
+                    setLoadingProgress(progress.progress * 100);
                 });
 
-                // Initialize Whisper in background
+                // Initialize voice services in background
                 whisperService.initialize().catch(err => {
-                    console.warn('Whisper failed to load:', err);
+                    console.warn('Voice input will load when needed:', err);
                 });
 
-                // Initialize TTS
                 ttsService.initialize().catch(err => {
-                    console.warn('TTS failed to load:', err);
+                    console.warn('Voice output will load when needed:', err);
                 });
-
-                // Initialize VectorDB for memory search
-                vectorDB.initialize().catch(err => {
-                    console.warn('VectorDB failed to load:', err);
-                });
-
-                // Load past memories
-                const stats = await memoryService.getStats();
-                console.log('📚 Memory loaded:', stats);
-
-                // Perform initial health check
-                const healthReport = await selfHealingEngine.performHealthCheck();
-                console.log('🏥 Health report:', healthReport);
-
-                // Set up periodic health checks (every 5 minutes)
-                setInterval(async () => {
-                    await selfHealingEngine.performHealthCheck();
-                }, 5 * 60 * 1000);
 
                 setModelReady(true);
-                setStatus('Ready');
+                setStatus('Ready to chat!');
 
-                // Initialize Consciousness AFTER everything else is ready
-                try {
-                    await advancedMemory.initialize();
-                    const consciousness = new ConsciousnessEngine(advancedMemory, huggingFaceAI);
-                    consciousness.onProactiveMessage((msg, emo) => {
-                        setMessages(prev => [...prev, { role: 'assistant', content: msg, timestamp: new Date().toISOString(), isProactive: true }]);
-                        setCurrentEmotion(emo);
-                        ttsService.speak(msg);
-                    });
-                    consciousness.activate();
-                    setConsciousnessEngine(consciousness);
-                    console.log('🧠 Consciousness activated');
+                // Speak greeting if TTS is ready
+                if (ttsService.isReady()) {
+                    ttsService.speak(greeting.content);
+                }
 
-                    // Initialize autonomous outfit engine
-                    autonomousOutfitEngine.webSearch = webSearchSkill;
-                    console.log('👗 Autonomous outfit engine ready');
-                } catch (e) { console.warn('Consciousness init delayed:', e); }
+                console.log('✅ Phuntroo is ready as your friend!');
             } catch (error) {
-                console.error('Failed to load model:', error);
-                setStatus('Error loading model');
+                console.error('Failed to initialize friend:', error);
+                setStatus('Had trouble waking up 😴');
             }
         };
-        initModel();
+
+        initFriend();
     }, []);
 
+    // Handle chat messages with friend personality
     const handleSendMessage = async (messageText) => {
-        if (!messageText.trim()) return;
+        if (!messageText.trim() || !modelReady) return;
 
         const userMessage = {
             role: 'user',
+            text: messageText,
             content: messageText,
             timestamp: new Date().toISOString()
         };
 
         setMessages(prev => [...prev, userMessage]);
         setIsProcessing(true);
-        setStatus('Thinking...');
+        setStatus('Thinking as your friend...');
 
         try {
-            // Check if we should search the web first
-            let finalResponse = '';
+            // Build friend context from memory
+            const context = friendMemory ? {
+                userPrefs: friendMemory.userPrefs,
+                recentChats: friendMemory.chatHistory.slice(-5),
+                emotion: currentEmotion
+            } : {};
 
-            if (webSearchSkill.shouldSearch(messageText)) {
-                setStatus('Searching the web...');
-                const searchSummary = await webSearchSkill.searchAndSummarize(messageText);
+            // Generate friend response
+            const aiResponse = await llamaService.generateResponse(messageText, context);
 
-                // Use LLM to incorporate search results
-                const enhancedPrompt = `User asked: "${messageText}"\n\nWeb search results:\n${searchSummary}\n\nProvide a helpful response incorporating this information.`;
-                finalResponse = await llamaService.generateResponse(
-                    [...messages, { role: 'user', content: enhancedPrompt }],
-                    (token) => { }
-                );
-            } else {
-                // Use Local LLM normally
-                setStatus('Thinking...');
-                finalResponse = await llamaService.generateResponse(
-                    [...messages, userMessage],
-                    (token) => { }
-                );
-            }
-
-            const aiResponse = {
+            const aiMessage = {
                 role: 'assistant',
-                content: finalResponse,
+                reply: aiResponse,
+                content: aiResponse,
                 timestamp: new Date().toISOString()
             };
 
-            const updatedMessages = [...messages, userMessage, aiResponse];
-            setMessages(updatedMessages);
+            setMessages(prev => [...prev, aiMessage]);
 
-            // Smart outfit selection using learned preferences
-            const newOutfit = await getSmartOutfit(updatedMessages, learningEngine);
-            if (JSON.stringify(newOutfit) !== JSON.stringify(currentOutfit)) {
-                console.log('🎨 Outfit:', newOutfit.name);
-                setCurrentOutfit(newOutfit);
+            // Update friend memory
+            if (friendMemory) {
+                const updatedMemory = {
+                    ...friendMemory,
+                    chatHistory: [...friendMemory.chatHistory, userMessage, aiMessage].slice(-50), // Keep last 50
+                    metadata: {
+                        ...friendMemory.metadata,
+                        lastSync: new Date().toISOString(),
+                        totalInteractions: (friendMemory.metadata.totalInteractions || 0) + 1
+                    }
+                };
+
+                setFriendMemory(updatedMemory);
+                await memorySync.save(updatedMemory);
             }
 
-            // Check if AI wants to autonomously change outfit
-            try {
-                const autonomousOutfit = await autonomousOutfitEngine.decideOutfitChange({
-                    userMessage: messageText,
-                    emotion: currentEmotion,
-                    timeOfDay: new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'
-                });
-
-                if (autonomousOutfit) {
-                    console.log('👗 AI chose outfit:', autonomousOutfit.name);
-                    setCurrentOutfit(autonomousOutfit);
-
-                    // AI announces outfit change
-                    const announcement = autonomousOutfitEngine.getOutfitAnnouncement(autonomousOutfit);
-                    const outfitMessage = {
-                        role: 'assistant',
-                        content: announcement,
-                        timestamp: new Date().toISOString(),
-                        isOutfitChange: true
-                    };
-                    setMessages(prev => [...prev, outfitMessage]);
-
-                    // Speak the announcement
-                    setTimeout(() => {
-                        ttsService.speak(announcement);
-                    }, 1000);
-                }
-            } catch (err) {
-                console.warn('Autonomous outfit failed:', err);
-            }
-
-            // Store conversation in memory
-            const conversationId = await memoryService.storeConversation(
-                messageText,
-                finalResponse,
-                {
-                    outfit: newOutfit?.name,
-                    emotion: currentEmotion,
-                    topics: newOutfit ? [newOutfit.name] : []
-                }
-            );
-
-            // Generate and store embedding asynchronously
-            if (conversationId) {
-                vectorDB.addEmbeddingToConversation(
-                    conversationId,
-                    `${messageText} ${finalResponse}`
-                ).catch(err => console.warn('Embedding failed:', err));
-
-                // Calculate conversation quality
-                selfUpgradeEngine.calculateQualityScore({
-                    userMessage: messageText,
-                    aiResponse: finalResponse,
-                    context: {
-                        outfit: newOutfit?.name,
-                        emotion: currentEmotion,
-                        topics: newOutfit ? [newOutfit.name] : []
-                    },
-                    timestamp: new Date().toISOString()
-                });
-            }
-
-            // Trigger learning every 5 conversations
-            const stats = await memoryService.getStats();
-            if (stats && stats.totalConversations % 5 === 0) {
-                console.log('🎓 Learning from conversations...');
-                learningEngine.updatePersonalityFromLearnings().catch(err =>
-                    console.warn('Learning failed:', err)
-                );
-            }
-
-            // Trigger autonomous self-upgrade every 10 conversations
-            if (stats && stats.totalConversations % 10 === 0) {
-                console.log('🚀 Running autonomous self-upgrade...');
-                selfUpgradeEngine.autonomousUpgrade().catch(err =>
-                    console.warn('Self-upgrade failed:', err)
-                );
-            }
-
-            // Make avatar speak the response
+            // Speak response
             setIsTalking(true);
-            ttsService.speak(finalResponse).then(() => {
+            ttsService.speak(aiResponse).then(() => {
                 setIsTalking(false);
             }).catch(err => {
                 console.warn('TTS error:', err);
                 setIsTalking(false);
             });
 
-            setStatus('Ready');
+            setStatus('Ready to chat!');
         } catch (error) {
             console.error('Error generating response:', error);
             const errorResponse = {
                 role: 'assistant',
-                content: `Error: ${error.message}`,
+                content: `I'm having trouble thinking right now, buddy. Can you try again?`,
                 timestamp: new Date().toISOString()
             };
             setMessages(prev => [...prev, errorResponse]);
-            setStatus('Error');
+            setStatus('Had a brain hiccup 🤯');
         } finally {
             setIsProcessing(false);
         }
     };
 
+    // Handle voice recording
     const handleVoiceToggle = async () => {
         if (isRecording) {
-            // Stop recording and transcribe
             setIsRecording(false);
-            setStatus('Transcribing...');
+            setStatus('Listening to you...');
             try {
                 const text = await whisperService.stopRecording();
                 if (text) {
@@ -277,14 +163,13 @@ function App() {
                 }
             } catch (error) {
                 console.error('Voice error:', error);
-                setStatus('Voice error');
+                setStatus('Couldn\'t hear you clearly');
             }
         } else {
-            // Start recording
             try {
                 await whisperService.startRecording();
                 setIsRecording(true);
-                setStatus('Listening...');
+                setStatus('🎤 I\'m listening!');
             } catch (error) {
                 console.error('Failed to start recording:', error);
                 setStatus('Microphone error');
@@ -292,12 +177,35 @@ function App() {
         }
     };
 
+    // GitHub Token Setup (one-time)
+    useEffect(() => {
+        if (!memorySync.getToken() && modelReady) {
+            // Optionally prompt for token (non-blocking)
+            setTimeout(() => {
+                const needsToken = window.confirm(
+                    'Want your memories to survive forever? I can sync to GitHub!\n\n' +
+                    'Click OK to set up (requires free GitHub token)'
+                );
+                if (needsToken) {
+                    const token = window.prompt(
+                        'Paste your GitHub Personal Access Token:\n' +
+                        '(Generate at: https://github.com/settings/tokens with "repo" scope)'
+                    );
+                    if (token) {
+                        memorySync.setToken(token);
+                        memorySync.syncToGitHub(friendMemory);
+                    }
+                }
+            }, 5000); // Ask after 5 seconds
+        }
+    }, [modelReady, friendMemory]);
 
+    // Loading screen
     if (!modelReady) {
         return (
             <div className="loading-screen">
-                <h1>🚀 PHUNTROO AI</h1>
-                <p>Downloading AI Brain (Llama-3-8B)...</p>
+                <h1>👋 Hey! Phuntroo waking up...</h1>
+                <p>Loading my brain so we can chat!</p>
                 <div className="progress-bar">
                     <div
                         className="progress-fill"
@@ -305,20 +213,20 @@ function App() {
                     />
                 </div>
                 <p>{loadingProgress.toFixed(1)}%</p>
-
-                <small>This happens only once. Please wait.</small>
+                <small>This happens once, then I'm cached 😊</small>
             </div>
         );
     }
 
+    // Main UI
     return (
         <div className="app">
             <header className="app-header">
                 <div className="header-left">
-                    <h1 className="app-title">🚀 PHUNTROO AI (Local)</h1>
+                    <h1 className="app-title">👋 Phuntroo - Your AI Friend</h1>
                     <div className="live-badge">
                         <div className="live-dot" />
-                        <span>Offline Capable</span>
+                        <span>Evolving & Learning</span>
                     </div>
                 </div>
             </header>
@@ -352,7 +260,12 @@ function App() {
             </main>
 
             <footer className="app-footer">
-                <p>PHUNTROO AI | Powered by Llama-3 WASM</p>
+                <p>
+                    Phuntroo Friend 💙 |
+                    {friendMemory?.metadata?.totalInteractions > 0 &&
+                        ` ${friendMemory.metadata.totalInteractions} chats together!`
+                    }
+                </p>
             </footer>
         </div>
     );

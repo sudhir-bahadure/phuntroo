@@ -3,7 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { VRMAvatar } from "./VRMAvatar";
 import { OrbitControls } from '@react-three/drei';
 
-export default function AvatarCanvas({ expression, visemes, avatarState }) {
+export default function AvatarCanvas({ expression, visemes, avatarState, url }) {
     const [visemeIndex, setVisemeIndex] = useState(0);
 
     useEffect(() => {
@@ -23,7 +23,7 @@ export default function AvatarCanvas({ expression, visemes, avatarState }) {
 
     return (
         <Canvas
-            camera={{ position: [0, 1.2, 2.0], fov: 60 }}
+            camera={{ position: [0, 0.85, 2.1], fov: 35 }}
             style={{ width: "100%", height: "100%" }}
         >
             <ambientLight intensity={0.8} />
@@ -33,16 +33,17 @@ export default function AvatarCanvas({ expression, visemes, avatarState }) {
                     expression={expression}
                     visemeIndex={visemeIndex}
                     avatarState={avatarState}
+                    url={url}
                 />
             </Suspense>
             <OrbitControls
-                target={[0, 1.2, 0]}
+                target={[0, 0.85, 0]}
                 enableZoom={true}
                 enablePan={false}
                 maxPolarAngle={Math.PI / 2}
                 minPolarAngle={Math.PI / 4}
-                minDistance={1.2}
-                maxDistance={3.5}
+                minDistance={1.0}
+                maxDistance={4.0}
             />
         </Canvas>
     );

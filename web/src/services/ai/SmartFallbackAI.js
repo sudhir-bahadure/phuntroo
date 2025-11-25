@@ -4,7 +4,16 @@
 
 class SmartFallbackAI {
     generateResponse(message, context = {}) {
-        const lowerMsg = message.toLowerCase();
+        // Handle message array (conversation history) or single string
+        let msgText = '';
+        if (Array.isArray(message)) {
+            const lastMsg = message[message.length - 1];
+            msgText = lastMsg.content || '';
+        } else if (typeof message === 'string') {
+            msgText = message;
+        }
+
+        const lowerMsg = msgText.toLowerCase();
         const profile = context.userProfile || {};
         const relationshipLevel = profile.relationshipLevel || 0;
 

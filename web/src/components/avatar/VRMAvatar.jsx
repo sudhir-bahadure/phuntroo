@@ -3,16 +3,35 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { VRMUtils, VRMLoaderPlugin } from "@pixiv/three-vrm";
 import { GLTFLoader } from 'three-stdlib';
+// import { useVRMAnimations } from '../../hooks/useVRMAnimations';
+// import { movementController } from '../../utils/MovementController';
+// import { autonomyManager } from '../../services/autonomy/AutonomyManager';
 
 const VISEME_NAMES = ["aa", "ih", "ou", "ee", "oh", "sil"];
 
-export const VRMAvatar = ({ visemeIndex, avatarState }) => {
+export const VRMAvatar = ({ visemeIndex, avatarState, url }) => {
     const vrmRef = useRef(null);
     const mixerRef = useRef(null);
     const [loadedScene, setLoadedScene] = useState(null);
 
-    // Mouse / pointer tracking
+    // Procedural animation refs
+    const blinkTimer = useRef(0);
+    const blinkValue = useRef(0);
+    const breatheTime = useRef(0);
     const pointer = useRef({ x: 0, y: 0 });
+
+    // Animation system integration
+    /*
+    const { playAnimation, isPlaying, isTransitioning } = useVRMAnimations(
+        vrmRef.current,
+        mixerRef.current
+    );
+    */
+    const isPlaying = false;
+    const isTransitioning = false;
+    const playAnimation = null;
+
+    // Mouse / pointer tracking
     useEffect(() => {
         const handler = (e) => {
             pointer.current.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -22,30 +41,35 @@ export const VRMAvatar = ({ visemeIndex, avatarState }) => {
         return () => window.removeEventListener("pointermove", handler);
     }, []);
 
-    // Blinking timer
-    const blinkTimer = useRef(0);
-    const blinkValue = useRef(0);
-
-    // Breathing
-    const breatheTime = useRef(0);
-
-    // Physics state
-    const physicsState = useRef({
-        offset: new THREE.Vector2(0, 0),
-        velocity: new THREE.Vector2(0, 0),
-    });
-
     // Load VRM
     useEffect(() => {
+        if (!url) return;
+
         const loader = new GLTFLoader();
         loader.register((parser) => new VRMLoaderPlugin(parser));
 
-        // Use absolute path or base URL logic
-        const modelPath = `${import.meta.env.BASE_URL}models/avatar.vrm`;
+        // Use the passed URL, handling relative paths correctly
+        const modelPath = url.startsWith('http') ? url : `${import.meta.env.BASE_URL}${url.replace(/^\//, '')}`;
+
+        console.log(`🔄 Loading VRM: ${modelPath}`);
 
         loader.load(
             modelPath,
             (gltf) => {
+                // Cleanup previous model ONLY after new one is loaded
+                if (vrmRef.current) {
+                    VRMUtils.removeUnnecessaryJoints(vrmRef.current.scene);
+                    if (vrmRef.current.scene) {
+                        vrmRef.current.scene.traverse((o) => {
+                            if (o.geometry) o.geometry.dispose();
+                            if (o.material) {
+                                if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
+                                else o.material.dispose();
+                            }
+                        });
+                    }
+                }
+
                 VRMUtils.rotateVRM0(gltf.scene);
                 const vrm = gltf.userData.vrm;
 
@@ -57,18 +81,72 @@ export const VRMAvatar = ({ visemeIndex, avatarState }) => {
                 // Ensure meshes are visible
                 vrm.scene.traverse(obj => obj.frustumCulled = false);
 
-                console.log("✅ VRM Loaded (Realistic Mode)");
+                console.log("✅ VRM Loaded Successfully");
             },
-            undefined,
-            (err) => console.error("VRM load error:", err)
+            (progress) => console.log(`Loading VRM: ${(progress.loaded / progress.total * 100).toFixed(0)}%`),
+            (err) => {
+                console.error("VRM load error:", err);
+                if (!vrmRef.current && url !== '/models/avatar.vrm') {
+                    console.log("⚠️ Falling back to default model");
+                }
+            }
         );
-    }, []);
+    }, [url]);
+
+    // Subscribe to autonomy events for animation triggers
+    /*
+    useEffect(() => {
+        if (!vrmRef.current || !mixerRef.current) return;
+
+        // Action changes (idle, walking, talking, etc.)
+        const actionUnsubscribe = autonomyManager.onActionChange((action) => {
+            const animUrl = autonomyManager.getAnimationForAction(action);
+            if (animUrl && playAnimation) {
+                console.log(`🎬 Playing action animation: ${action}`);
+                playAnimation(animUrl, {
+                    loop: THREE.LoopRepeat,
+                    blendDuration: 0.3
+                }).catch(err => {
+                    console.warn(`Animation not found: ${animUrl}`, err);
+                });
+            }
+        });
+
+        // Gesture changes (wave, nod, thinking, etc.)
+        const gestureUnsubscribe = autonomyManager.onGestureChange((gesture) => {
+            const animUrl = autonomyManager.getAnimationForGesture(gesture);
+            if (animUrl && playAnimation) {
+                console.log(`👋 Playing gesture: ${gesture}`);
+                playAnimation(animUrl, {
+                    loop: THREE.LoopOnce,
+                    blendDuration: 0.2
+                }).catch(err => {
+                    console.warn(`Gesture animation not found: ${animUrl}`, err);
+                });
+            }
+        });
+
+        return () => {
+            // Cleanup subscriptions
+            if (actionUnsubscribe) actionUnsubscribe();
+            if (gestureUnsubscribe) gestureUnsubscribe();
+        };
+    }, [vrmRef.current, mixerRef.current, playAnimation]);
+    */
 
     useFrame((state, delta) => {
         const vrm = vrmRef.current;
         if (!vrm) return;
 
         const t = state.clock.elapsedTime;
+
+        // ==== SPATIAL MOVEMENT ====
+        // Update position from MovementController
+        const { position, rotation, isMoving } = movementController.update(delta);
+        if (vrm.scene) {
+            vrm.scene.position.copy(position);
+            vrm.scene.rotation.y = rotation;
+        }
 
         // ==== AUTONOMOUS GAZE & HEAD TRACKING ====
         // Calculate target based on state
@@ -88,7 +166,6 @@ export const VRMAvatar = ({ visemeIndex, avatarState }) => {
             };
         } else {
             // Idle: Look around randomly
-            // We can use noise or simple sine waves for now
             targetLookAt = {
                 x: Math.sin(t * 0.2) * 0.3 + Math.sin(t * 1.5) * 0.1,
                 y: Math.sin(t * 0.15) * 0.1
@@ -133,41 +210,43 @@ export const VRMAvatar = ({ visemeIndex, avatarState }) => {
         }
 
         // ==== INTERACTION PHYSICS / IDLE MOTION ====
-        const spine = vrm.humanoid?.getNormalizedBoneNode("spine");
-        const leftArm = vrm.humanoid?.getNormalizedBoneNode("leftUpperArm");
-        const rightArm = vrm.humanoid?.getNormalizedBoneNode("rightUpperArm");
+        // Only apply procedural arm movements if no clip animation is playing
+        if (!isPlaying || isTransitioning) {
+            const spine = vrm.humanoid?.getNormalizedBoneNode("spine");
+            const leftArm = vrm.humanoid?.getNormalizedBoneNode("leftUpperArm");
+            const rightArm = vrm.humanoid?.getNormalizedBoneNode("rightUpperArm");
 
-        if (spine && leftArm && rightArm) {
-            // Base sway
-            const swayAmount = avatarState === 'talking' ? 0.05 : 0.02;
-            const swayX = Math.sin(t * 0.5) * swayAmount;
-            const swayY = Math.cos(t * 0.3) * swayAmount;
+            if (spine && leftArm && rightArm) {
+                // Base sway
+                const swayAmount = avatarState === 'talking' ? 0.05 : 0.02;
+                const swayX = Math.sin(t * 0.5) * swayAmount;
+                const swayY = Math.cos(t * 0.3) * swayAmount;
 
-            spine.rotation.z = swayX;
-            spine.rotation.x = swayY;
+                spine.rotation.z = swayX;
+                spine.rotation.x = swayY;
 
-            // Arms
-            // Natural hang
-            let leftArmTargetZ = -1.4; // ~80 deg down
-            let rightArmTargetZ = 1.4;
+                // Arms - Natural hang
+                let leftArmTargetZ = -1.4; // ~80 deg down
+                let rightArmTargetZ = 1.4;
 
-            // Gestures when talking
-            if (avatarState === 'talking') {
-                leftArmTargetZ += Math.sin(t * 3) * 0.1;
-                rightArmTargetZ -= Math.sin(t * 3) * 0.1;
+                // Gestures when talking
+                if (avatarState === 'talking') {
+                    leftArmTargetZ += Math.sin(t * 3) * 0.1;
+                    rightArmTargetZ -= Math.sin(t * 3) * 0.1;
 
-                // Occasional emphasis
-                if (Math.sin(t * 1) > 0.8) {
-                    rightArm.rotation.x = Math.sin(t * 5) * 0.2;
+                    // Occasional emphasis
+                    if (Math.sin(t * 1) > 0.8) {
+                        rightArm.rotation.x = Math.sin(t * 5) * 0.2;
+                    }
                 }
+
+                leftArm.rotation.z = leftArmTargetZ + swayX * 0.5;
+                rightArm.rotation.z = rightArmTargetZ + swayX * 0.5;
+
+                // Breathing effect on arms
+                leftArm.rotation.x = Math.sin(breatheTime.current) * 0.03;
+                rightArm.rotation.x = Math.sin(breatheTime.current) * 0.03;
             }
-
-            leftArm.rotation.z = leftArmTargetZ + swayX * 0.5;
-            rightArm.rotation.z = rightArmTargetZ + swayX * 0.5;
-
-            // Breathing effect on arms
-            leftArm.rotation.x = Math.sin(breatheTime.current) * 0.03;
-            rightArm.rotation.x = Math.sin(breatheTime.current) * 0.03;
         }
 
         // ==== LIP-SYNC VISEMES ====
@@ -190,6 +269,7 @@ export const VRMAvatar = ({ visemeIndex, avatarState }) => {
         // CRITICAL: Update VRM physics and blendshapes
         vrm.update(delta);
 
+        // Update animation mixer
         mixerRef.current?.update(delta);
     });
 

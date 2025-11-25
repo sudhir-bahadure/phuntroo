@@ -1,37 +1,92 @@
 // =======================================
-// WhisperService.js – STT Always Enabled
+// WhisperService.js – Offline STT with Xenova Transformers
 // =======================================
 
+// import { pipeline } from '@xenova/transformers';
+
 export class WhisperService {
-    constructor(endpoint = "/api/stt") {
-        this.endpoint = endpoint;
+    constructor() {
+        this.pipeline = null;
+        this.isInitialized = false;
+        this.isLoading = false;
         this.mediaRecorder = null;
         this.audioChunks = [];
+        this.modelName = 'Xenova/whisper-tiny.en'; // Lightweight model for browser
     }
 
+    /**
+     * Initialize the Whisper model
+     * This downloads the model on first use and caches it
+     */
     async initialize() {
-        console.log('WhisperService: STT initialized and ready.');
-        return;
-    }
+        if (this.isInitialized) {
+            console.log('✅ WhisperService: Already initialized');
+            return;
+        }
 
-    async startRecording() {
+        if (this.isLoading) {
+            console.log('⏳ WhisperService: Already loading...');
+            return;
+        }
+
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.mediaRecorder = new MediaRecorder(stream);
-            this.audioChunks = [];
+            this.isLoading = true;
+            console.log('🎤 WhisperService: Initializing Whisper model...');
 
-            this.mediaRecorder.ondataavailable = (event) => {
-                this.audioChunks.push(event.data);
-            };
+            // Dynamic import to prevent page load freeze
+            const { pipeline } = await import('@xenova/transformers');
 
-            this.mediaRecorder.start();
-            return true;
+            // Load the automatic speech recognition pipeline
+            this.pipeline = await pipeline('automatic-speech-recognition', this.modelName);
+
+            this.isInitialized = true;
+            this.isLoading = false;
+            console.log('✅ WhisperService: Whisper model loaded and ready!');
         } catch (error) {
-            console.error('Failed to start recording:', error);
+            this.isLoading = false;
+            console.error('❌ WhisperService: Failed to initialize:', error);
             throw error;
         }
     }
 
+    /**
+     * Start recording audio from microphone
+     */
+    async startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    channelCount: 1,
+                    sampleRate: 16000, // Whisper expects 16kHz
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
+
+            this.mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus'
+            });
+            this.audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.start();
+            console.log('🎤 Recording started...');
+            return true;
+        } catch (error) {
+            console.error('❌ Failed to start recording:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Stop recording and transcribe the audio
+     */
     async stopRecording() {
         return new Promise((resolve, reject) => {
             if (!this.mediaRecorder) {
@@ -40,48 +95,128 @@ export class WhisperService {
             }
 
             this.mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-                // Stop all tracks
-                this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                try {
+                    const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
 
-                // Call transcribe
-                const text = await this.transcribe(audioBlob);
-                resolve(text);
+                    // Stop all tracks
+                    this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+                    console.log('🎤 Recording stopped, transcribing...');
+
+                    // Transcribe the audio
+                    const text = await this.transcribe(audioBlob);
+                    resolve(text);
+                } catch (error) {
+                    console.error('❌ Error in stopRecording:', error);
+                    reject(error);
+                }
             };
 
             this.mediaRecorder.stop();
         });
     }
 
-    async transcribe(audioBlob) {
+    /**
+     * Convert audio blob to format suitable for Whisper
+     */
+    async audioToFloat32Array(audioBlob) {
         try {
-            // If we have a backend, use it. For now, mock it or use browser speech recognition as fallback?
-            // The user provided code uses a fetch to /api/stt.
-            // Since we are likely client-side only for now, we might want to use Web Speech API for STT if backend is missing.
-            // But adhering to the user's code:
+            // Convert blob to array buffer
+            const arrayBuffer = await audioBlob.arrayBuffer();
 
-            /*
-            const form = new FormData();
-            form.append("audio", audioBlob, "speech.webm");
-
-            const res = await fetch(this.endpoint, {
-                method: "POST",
-                body: form,
+            // Decode audio data
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 16000
             });
 
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            return data.text ?? "";
-            */
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-            // Fallback for demo/local mode without backend:
-            console.log("Simulating STT (Backend not connected)");
-            return "I heard you, but I am running in offline mode.";
+            // Get the audio data as Float32Array (mono channel)
+            const audioData = audioBuffer.getChannelData(0);
 
-        } catch (err) {
-            console.error("Whisper STT error:", err);
+            return audioData;
+        } catch (error) {
+            console.error('❌ Error converting audio:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Transcribe audio blob to text using Whisper
+     */
+    async transcribe(audioBlob) {
+        try {
+            // Ensure model is initialized
+            if (!this.isInitialized) {
+                console.log('⏳ Model not initialized, initializing now...');
+                await this.initialize();
+            }
+
+            // Convert audio to the format Whisper expects
+            const audioData = await this.audioToFloat32Array(audioBlob);
+
+            console.log('🔄 Transcribing audio...');
+
+            // Run the transcription
+            const result = await this.pipeline(audioData, {
+                chunk_length_s: 30,
+                stride_length_s: 5,
+                language: 'english',
+                task: 'transcribe'
+            });
+
+            const transcribedText = result.text.trim();
+            console.log('✅ Transcription:', transcribedText);
+
+            return transcribedText;
+
+        } catch (error) {
+            console.error('❌ Whisper transcription error:', error);
+
+            // Fallback to empty string on error
             return "";
         }
+    }
+
+    /**
+     * Transcribe from a file input
+     */
+    async transcribeFile(file) {
+        try {
+            if (!this.isInitialized) {
+                await this.initialize();
+            }
+
+            const audioData = await this.audioToFloat32Array(file);
+
+            const result = await this.pipeline(audioData, {
+                chunk_length_s: 30,
+                stride_length_s: 5,
+                language: 'english',
+                task: 'transcribe'
+            });
+
+            return result.text.trim();
+        } catch (error) {
+            console.error('❌ File transcription error:', error);
+            return "";
+        }
+    }
+
+    /**
+     * Check if the service is ready
+     */
+    isReady() {
+        return this.isInitialized && !this.isLoading;
+    }
+
+    /**
+     * Get current status
+     */
+    getStatus() {
+        if (this.isLoading) return 'loading';
+        if (this.isInitialized) return 'ready';
+        return 'not_initialized';
     }
 }
 

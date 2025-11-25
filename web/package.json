@@ -13,10 +13,12 @@
         "crypto": false
     },
     "dependencies": {
+        "@mlc-ai/web-llm": "^0.2.80",
         "@pixiv/three-vrm": "^3.4.4",
         "@react-three/drei": "^9.122.0",
         "@react-three/fiber": "^8.18.0",
         "@readyplayerme/rpm-react-sdk": "^0.1.5",
+        "@xenova/transformers": "^2.17.2",
         "axios": "^1.6.2",
         "dexie": "^4.2.1",
         "framer-motion": "^10.16.16",
