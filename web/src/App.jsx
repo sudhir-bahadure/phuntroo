@@ -119,7 +119,7 @@ function App() {
                     metadata: {
                         ...friendMemory.metadata,
                         lastSync: new Date().toISOString(),
-                        totalInteractions: (friendMemory.metadata.totalInteractions || 0) + 1
+                        totalInteractions: (friendMemory?.metadata?.totalInteractions || 0) + 1
                     }
                 };
 

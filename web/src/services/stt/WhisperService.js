@@ -34,18 +34,24 @@ export class WhisperService {
             console.log('🎤 WhisperService: Initializing Whisper model...');
 
             // Dynamic import to prevent page load freeze
-            const { pipeline } = await import('@xenova/transformers');
+            const transformers = await import('@xenova/transformers');
+
+            // Null check for transformers
+            if (!transformers || !transformers.pipeline) {
+                throw new Error('Transformers library not loaded properly');
+            }
 
             // Load the automatic speech recognition pipeline
-            this.pipeline = await pipeline('automatic-speech-recognition', this.modelName);
+            this.pipeline = await transformers.pipeline('automatic-speech-recognition', this.modelName);
 
             this.isInitialized = true;
             this.isLoading = false;
             console.log('✅ WhisperService: Whisper model loaded and ready!');
         } catch (error) {
             this.isLoading = false;
-            console.error('❌ WhisperService: Failed to initialize:', error);
-            throw error;
+            console.warn('⚠️ WhisperService: Failed to initialize, falling back to Web Speech API:', error);
+            // Don't throw - allow fallback to Web Speech API
+            this.useWebSpeech = true;
         }
     }
 

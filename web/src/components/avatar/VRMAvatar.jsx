@@ -48,8 +48,8 @@ export const VRMAvatar = ({ visemeIndex, avatarState, url }) => {
         const loader = new GLTFLoader();
         loader.register((parser) => new VRMLoaderPlugin(parser));
 
-        // Use the passed URL, handling relative paths correctly
-        const modelPath = url.startsWith('http') ? url : `${import.meta.env.BASE_URL}${url.replace(/^\//, '')}`;
+        // Use relative path to prevent doubling with Vite base
+        const modelPath = url.startsWith('http') ? url : `./models/avatar.vrm`;
 
         console.log(`🔄 Loading VRM: ${modelPath}`);
 
