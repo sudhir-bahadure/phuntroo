@@ -1,10 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import compression from 'vite-plugin-compression'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
-    base: '/phuntroo/', // GitHub Pages base path
+    base: '/phuntroo/',
     plugins: [
         react(),
         nodePolyfills({
