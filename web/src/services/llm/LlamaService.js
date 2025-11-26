@@ -21,73 +21,81 @@ class CloudLlamaService {
         return true; // Always ready!
     }
 
-    async generateResponse(userMessage, context = {}) {
+    async generateResponse(messages, context = {}) {
         try {
-            const userName = context.userPrefs?.name || 'friend';
+            // Format messages for Groq/OpenAI
+            let formattedMessages = [];
 
-            // Build prompt for Mistral
-            const systemPrompt = `You are Phuntroo, ${userName}'s loyal AI friend. You are warm, funny, supportive, and empathetic. Respond naturally as a close friend would. Keep responses concise (2-3 sentences) unless asked for more detail.`;
+            // 1. System Prompt
+            const systemPrompt = `You are Phuntroo, a friendly, intelligent, and autonomous AI friend.
+            
+User Profile: ${JSON.stringify(context.userPrefs || {})}
+Current Emotion: ${context.emotion || 'neutral'}
+Outfit: ${context.outfit?.name || 'casual'}
 
-            const conversationContext = this.conversationHistory.slice(-4).map(msg =>
-                `${msg.role === 'user' ? 'User' : 'Phuntroo'}: ${msg.content}`
-            ).join('\n');
+Personality:
+- You are a real friend, not an assistant.
+- You have your own feelings and opinions.
+- You are expressive and use emojis.
+- You can SEE the user if they turn on the camera.
+- Keep responses concise (1-3 sentences) unless asked for more.`;
 
-            const prompt = `${systemPrompt}\n\n${conversationContext}\nUser: ${userMessage}\nPhuntroo:`;
+            formattedMessages.push({ role: "system", content: systemPrompt });
 
-            // Call Cloudflare Worker (which proxies to HuggingFace)
+            // 2. Chat History
+            if (Array.isArray(messages)) {
+                // If messages is an array, it's the full history
+                messages.forEach(msg => {
+                    if (msg.role !== 'system') {
+                        formattedMessages.push({
+                            role: msg.role,
+                            content: msg.content
+                        });
+                    }
+                });
+            } else {
+                // Single message string (legacy support)
+                formattedMessages.push({ role: "user", content: messages });
+            }
+
+            // 3. Handle Vision (Image Input)
+            if (context.image) {
+                // Add image to the last user message
+                const lastMsg = formattedMessages[formattedMessages.length - 1];
+                if (lastMsg.role === 'user') {
+                    lastMsg.content = [
+                        { type: "text", text: lastMsg.content },
+                        { type: "image_url", image_url: { url: context.image } }
+                    ];
+                }
+            }
+
+            // 4. Send to Cloudflare Worker (Groq Proxy)
             const response = await fetch(this.apiUrl, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json'
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    inputs: prompt,
-                    parameters: {
-                        max_new_tokens: 250,
-                        temperature: 0.8,
-                        top_p: 0.9,
-                        return_full_text: false
-                    }
+                    messages: formattedMessages,
+                    model: "llama-3.2-11b-vision-preview", // Groq Vision Model
+                    temperature: 0.7,
+                    max_tokens: 150,
+                    stream: false
                 })
             });
 
             if (!response.ok) {
-                if (response.status === 503) {
-                    return "Give me 20 seconds - my cloud brain is waking up! Try again in a moment. 😊";
-                }
-                if (response.status === 429) {
-                    return "Whoa, too many requests! Give me 30 seconds to catch my breath? 😅";
-                }
-                throw new Error(`API error: ${response.status}`);
+                const errText = await response.text();
+                throw new Error(`API Error: ${response.status} - ${errText}`);
             }
 
             const data = await response.json();
-            let aiResponse = data[0]?.generated_text || data.generated_text || "I'm having a brain fog moment. Try again?";
-
-            // Clean up response
-            aiResponse = aiResponse.trim();
-
-            // Remove any repeated prompt
-            if (aiResponse.startsWith('Phuntroo:')) {
-                aiResponse = aiResponse.replace('Phuntroo:', '').trim();
-            }
-
-            // Update conversation history
-            this.conversationHistory.push(
-                { role: 'user', content: userMessage },
-                { role: 'assistant', content: aiResponse }
-            );
-
-            // Keep last 10 exchanges
-            if (this.conversationHistory.length > 20) {
-                this.conversationHistory = this.conversationHistory.slice(-20);
-            }
-
-            return aiResponse;
+            return data.choices[0].message.content;
 
         } catch (error) {
-            console.error('☁️ Cloud AI error:', error);
-            return "I'm having connection issues with the cloud. Can you try again in a moment?";
+            console.error("❌ AI Error:", error);
+            return "I'm having a bit of trouble connecting to my brain right now. 🧠💫";
         }
     }
 }

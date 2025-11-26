@@ -7,6 +7,7 @@ import { ttsService } from './services/tts/TTSService';
 import { memorySync } from './utils/MemorySync';
 import { autonomyManager } from './services/autonomy/AutonomyManager';
 import { getSmartOutfit } from './services/OutfitService';
+import { visionService } from './services/vision/VisionService';
 import './App.css';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
     const [currentEmotion, setCurrentEmotion] = useState('neutral');
     const [isTalking, setIsTalking] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
+    const [isSeeing, setIsSeeing] = useState(false); // Vision State
     const [currentOutfit, setCurrentOutfit] = useState(null);
 
     // Model State
@@ -119,11 +121,13 @@ function App() {
                 userPrefs: friendMemory.userPrefs,
                 recentChats: friendMemory.chatHistory.slice(-5),
                 emotion: currentEmotion,
-                outfit: currentOutfit
+                outfit: currentOutfit,
+                image: isSeeing ? visionService.captureImage() : null // Capture image if seeing
             } : {};
 
             // Generate friend response
-            const aiResponse = await llamaService.generateResponse(messageText, context);
+            // Pass full message history for better context
+            const aiResponse = await llamaService.generateResponse([...messages, userMessage], context);
 
             // Smart Outfit Change based on conversation topic
             const newOutfit = await getSmartOutfit([...messages, userMessage]);
@@ -208,6 +212,24 @@ function App() {
         }
     };
 
+    // Handle Vision Toggle
+    const handleVisionToggle = async () => {
+        if (isSeeing) {
+            visionService.stopCamera();
+            setIsSeeing(false);
+            setStatus('Vision off');
+        } else {
+            try {
+                await visionService.startCamera();
+                setIsSeeing(true);
+                setStatus('👀 I can see you!');
+            } catch (error) {
+                console.error('Vision error:', error);
+                setStatus('Camera error 🚫');
+            }
+        }
+    };
+
     // GitHub Token Setup (one-time)
     useEffect(() => {
         if (!memorySync.getToken() && modelReady) {
@@ -288,6 +310,15 @@ function App() {
                         isRecording={isRecording}
                         status={status}
                     />
+                    {/* Vision Toggle Button (Floating) */}
+                    <button
+                        className={`icon-button vision-btn ${isSeeing ? 'active' : ''}`}
+                        onClick={handleVisionToggle}
+                        title="Toggle Vision"
+                        style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 200 }}
+                    >
+                        {isSeeing ? '👀' : '📷'}
+                    </button>
                 </div>
             </main>
 
