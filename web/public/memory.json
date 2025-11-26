@@ -1,16 +1,51 @@
 {
-    "userPrefs": {
-        "name": "Sudhir",
-        "mood": "curious",
-        "likes": [],
-        "conversationStyle": "friendly",
-        "timezone": "Asia/Kolkata"
+  "userPrefs": {
+    "name": "Sudhir",
+    "mood": "curious",
+    "likes": [],
+    "conversationStyle": "friendly"
+  },
+  "chatHistory": [
+    {
+      "role": "user",
+      "text": "hi",
+      "content": "hi",
+      "timestamp": "2025-11-25T18:38:04.040Z"
     },
-    "chatHistory": [],
-    "evolutionLog": "Started as your friend on 2025-11-25. Initial personality: warm, supportive, funny.",
-    "metadata": {
-        "version": "1.0",
-        "lastSync": "",
-        "totalInteractions": 0
+    {
+      "role": "assistant",
+      "reply": "I'm having connection issues with the cloud. Can you try again in a moment?",
+      "content": "I'm having connection issues with the cloud. Can you try again in a moment?",
+      "timestamp": "2025-11-25T18:38:05.151Z"
+    },
+    {
+      "role": "user",
+      "text": "hi",
+      "content": "hi",
+      "timestamp": "2025-11-25T19:00:43.462Z"
+    },
+    {
+      "role": "assistant",
+      "reply": "I'm having connection issues with the cloud. Can you try again in a moment?",
+      "content": "I'm having connection issues with the cloud. Can you try again in a moment?",
+      "timestamp": "2025-11-25T19:00:43.796Z"
+    },
+    {
+      "role": "user",
+      "text": "hi",
+      "content": "hi",
+      "timestamp": "2025-11-25T19:01:15.319Z"
+    },
+    {
+      "role": "assistant",
+      "reply": "I'm having connection issues with the cloud. Can you try again in a moment?",
+      "content": "I'm having connection issues with the cloud. Can you try again in a moment?",
+      "timestamp": "2025-11-25T19:01:15.849Z"
     }
+  ],
+  "evolutionLog": "Started as your friend on 2025-11-25",
+  "metadata": {
+    "lastSync": "2025-11-25T19:01:15.849Z",
+    "totalInteractions": 3
+  }
 }
