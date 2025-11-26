@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const SOCKET_URL = import.meta.env.VITE_API_URL || 'https://phuntroo-ai-proxy.sudhir1100200426.workers.dev';
 
 class WebSocketService {
     constructor() {
