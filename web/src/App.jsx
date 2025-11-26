@@ -5,6 +5,8 @@ import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
 import { ttsService } from './services/tts/TTSService';
 import { memorySync } from './utils/MemorySync';
+import { autonomyManager } from './services/autonomy/AutonomyManager';
+import { getSmartOutfit } from './services/OutfitService';
 import './App.css';
 
 function App() {
@@ -20,6 +22,7 @@ function App() {
     const [currentEmotion, setCurrentEmotion] = useState('neutral');
     const [isTalking, setIsTalking] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
+    const [currentOutfit, setCurrentOutfit] = useState(null);
 
     // Model State
     const [modelReady, setModelReady] = useState(false);
@@ -76,6 +79,25 @@ function App() {
         initFriend();
     }, []);
 
+    // Autonomous Brain Loop
+    useEffect(() => {
+        if (!modelReady) return;
+
+        const brainInterval = setInterval(() => {
+            // Context for the brain
+            const context = {
+                emotion: currentEmotion,
+                isTalking: isTalking,
+                lastMessage: messages.length > 0 ? messages[messages.length - 1].content : null
+            };
+
+            // Let the brain decide what to do (move, gesture, etc.)
+            autonomyManager.decideAction(context);
+        }, 1000); // Think every second
+
+        return () => clearInterval(brainInterval);
+    }, [modelReady, currentEmotion, isTalking, messages]);
+
     // Handle chat messages with friend personality
     const handleSendMessage = async (messageText) => {
         if (!messageText.trim() || !modelReady) return;
@@ -96,11 +118,20 @@ function App() {
             const context = friendMemory ? {
                 userPrefs: friendMemory.userPrefs,
                 recentChats: friendMemory.chatHistory.slice(-5),
-                emotion: currentEmotion
+                emotion: currentEmotion,
+                outfit: currentOutfit
             } : {};
 
             // Generate friend response
             const aiResponse = await llamaService.generateResponse(messageText, context);
+
+            // Smart Outfit Change based on conversation topic
+            const newOutfit = await getSmartOutfit([...messages, userMessage]);
+            if (newOutfit && newOutfit.name !== currentOutfit?.name) {
+                console.log(`👗 Changing outfit to: ${newOutfit.name}`);
+                setCurrentOutfit(newOutfit);
+                // You would pass this to Avatar3D if it supports texture swapping
+            }
 
             const aiMessage = {
                 role: 'assistant',
