@@ -1,181 +1,123 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import TalkingHead from '../../lib/TalkingHead';
+import { TalkingHead } from '../../lib/talkinghead.mjs';
 
-/**
- * AvatarScene - Inner component that handles Three.js scene
- */
-function AvatarScene({
-    avatarUrl,
-    animations,
-    currentAnimation,
-    visemes,
+export default function TalkingHeadAvatar({
     avatarState,
+    visemes,
     isSeeing
 }) {
-    const { scene } = useThree();
-    const talkingHead = useRef(null);
-    const [loaded, setLoaded] = useState(false);
+    const containerRef = useRef(null);
+    const avatarRef = useRef(null);
+    const [isLoaded, setIsLoaded] = useState(false);
 
-    // Initialize avatar
     useEffect(() => {
+        if (!containerRef.current) return;
+
         const init = async () => {
-            const th = new TalkingHead();
-
             try {
-                // Load avatar
-                await th.loadAvatar(scene, avatarUrl);
+                // Initialize TalkingHead
+                const node = containerRef.current;
+                const head = new TalkingHead(node, {
+                    ttsLang: "en-GB",
+                    lipsyncLang: "en",
+                    cameraView: "upper", // Focus on upper body for chat
+                    avatarIdleEyeContact: 0.5,
+                    avatarSpeakingEyeContact: 0.8
+                });
 
-                // Load animations
-                for (const [name, url] of Object.entries(animations)) {
-                    try {
-                        await th.loadAnimation(name, url);
-                    } catch (error) {
-                        console.warn(`Failed to load animation ${name}:`, error);
-                    }
+                // Load the avatar
+                await head.showAvatar({
+                    url: '/phuntroo/avatars/realistic-avatar.glb',
+                    body: 'F',
+                    avatarMood: 'neutral',
+                    ttsVoice: "Google UK English Female"
+                });
+
+                // Try to load animations if they exist (optional)
+                try {
+                    await head.loadAnimation('walk', '/phuntroo/animations/walk.glb');
+                    await head.loadAnimation('idle', '/phuntroo/animations/idle.glb');
+                    await head.loadAnimation('wave', '/phuntroo/animations/wave.glb');
+                } catch (e) {
+                    console.log("Animations not found, using defaults");
                 }
 
-                talkingHead.current = th;
-                setLoaded(true);
+                avatarRef.current = head;
+                setIsLoaded(true);
 
-                // Play default idle animation
-                th.playAnimation('idle');
+                // Start the animation loop
+                const animate = () => {
+                    // TalkingHead handles its own loop internally via requestAnimationFrame
+                    // when we call start() or similar, but here we just let it sit
+                };
+
             } catch (error) {
-                console.error('Failed to initialize avatar:', error);
+                console.error("Failed to init avatar:", error);
             }
         };
 
         init();
 
         return () => {
-            if (talkingHead.current) {
-                talkingHead.current.dispose();
-            }
+            // Cleanup if needed
+            // avatarRef.current?.stop();
         };
-    }, [scene, avatarUrl, animations]);
+    }, []);
 
-    // Update animation based on state
+    // Handle State Changes
     useEffect(() => {
-        if (!loaded || !talkingHead.current) return;
-
-        const th = talkingHead.current;
-
-        // Map avatar state to animation
-        let animName = 'idle';
+        if (!avatarRef.current || !isLoaded) return;
+        const head = avatarRef.current;
 
         if (avatarState === 'talking') {
-            animName = 'gesture-talk';
+            head.startLipsync(); // Ensure lipsync is active
+            // If we had a specific talking gesture:
+            // head.playAnimation('gesture-talk'); 
         } else if (avatarState === 'listening') {
-            animName = 'thinking';
-        } else if (avatarState === 'thinking') {
-            animName = 'thinking';
-        } else if (currentAnimation) {
-            animName = currentAnimation;
+            head.stopLipsync();
+            // head.playAnimation('thinking');
+        } else {
+            head.stopLipsync();
+            // head.playAnimation('idle');
         }
 
-        th.playAnimation(animName);
-    }, [loaded, avatarState, currentAnimation]);
+    }, [avatarState, isLoaded]);
 
-    // Update visemes for lip-sync
+    // Handle Visemes (Lip Sync from TTS)
     useEffect(() => {
-        if (!loaded || !talkingHead.current || !visemes) return;
+        if (!avatarRef.current || !isLoaded || !visemes) return;
 
-        // Apply visemes from TTS
-        Object.entries(visemes).forEach(([viseme, value]) => {
-            talkingHead.current.setViseme(viseme, value);
-        });
-    }, [loaded, visemes]);
+        // TalkingHead has its own internal TTS/Lipsync engine.
+        // If we are using external TTS (like Coqui/Browser TTS) and getting visemes,
+        // we need to map them. 
+        // However, TalkingHead.mjs is designed to handle audio + lipsync internally 
+        // or via its own speakText() method.
 
-    // Look at camera when seeing
+        // For now, we'll assume the external TTS service is playing audio
+        // and we might need to trigger mouth shapes if possible.
+        // But TalkingHead is best used by calling head.speakText(text).
+
+    }, [visemes, isLoaded]);
+
+    // Expose to window for direct control if needed
     useEffect(() => {
-        if (!loaded || !talkingHead.current) return;
-
-        if (isSeeing) {
-            // Make avatar look at camera
-            talkingHead.current.lookAt(0, 0, 2);
+        if (isLoaded && avatarRef.current) {
+            window.talkingHeadAvatar = avatarRef.current;
         }
-    }, [loaded, isSeeing]);
-
-    // Animation loop
-    useFrame(() => {
-        if (talkingHead.current) {
-            talkingHead.current.update();
-        }
-    });
-
-    return null;
-}
-
-/**
- * TalkingHeadAvatar - Main component
- */
-export default function TalkingHeadAvatar({
-    avatarState = 'idle',
-    expression = 'neutral',
-    visemes = {},
-    url // Kept for compatibility but not used (we use GLB now)
-}) {
-    // Animation paths (will be loaded from public/animations)
-    const [currentAnimation, setCurrentAnimation] = useState('idle');
-    const [isSeeing, setIsSeeing] = useState(false);
-
-    const animations = {
-        walk: '/phuntroo/animations/walk.glb',
-        idle: '/phuntroo/animations/idle.glb',
-        wave: '/phuntroo/animations/wave.glb',
-        'gesture-talk': '/phuntroo/animations/gesture-talk.glb',
-        thinking: '/phuntroo/animations/thinking.glb'
-    };
-
-    // Random autonomous actions
-    useEffect(() => {
-        const interval = setInterval(() => {
-            // 20% chance to do something
-            if (Math.random() < 0.2 && avatarState === 'idle') {
-                const actions = ['walk', 'wave', 'idle'];
-                const action = actions[Math.floor(Math.random() * actions.length)];
-                setCurrentAnimation(action);
-
-                // Reset to idle after animation
-                setTimeout(() => {
-                    setCurrentAnimation('idle');
-                }, 5000);
-            }
-        }, 10000); // Check every 10 seconds
-
-        return () => clearInterval(interval);
-    }, [avatarState]);
+    }, [isLoaded]);
 
     return (
-        <div style={{ width: '100%', height: '100%' }}>
-            <Canvas>
-                <PerspectiveCamera makeDefault position={[0, 0, 2.5]} />
-
-                {/* Lighting */}
-                <ambientLight intensity={0.5} />
-                <directionalLight position={[5, 5, 5]} intensity={0.8} />
-                <spotLight
-                    position={[0, 3, 0]}
-                    angle={0.3}
-                    penumbra={1}
-                    intensity={0.5}
-                    castShadow
-                />
-
-                {/* Avatar */}
-                <AvatarScene
-                    avatarUrl="/phuntroo/avatars/realistic-female.glb"
-                    animations={animations}
-                    currentAnimation={currentAnimation}
-                    visemes={visemes}
-                    avatarState={avatarState}
-                    isSeeing={isSeeing}
-                />
-
-                {/* Controls (optional - for debugging) */}
-                {/* <OrbitControls /> */}
-            </Canvas>
-        </div>
+        <div
+            ref={containerRef}
+            id="avatar-container"
+            style={{
+                width: '100%',
+                height: '100%',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                zIndex: 0
+            }}
+        />
     );
 }
