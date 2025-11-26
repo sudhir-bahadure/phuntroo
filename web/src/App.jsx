@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Avatar3D from './components/avatar/Avatar3D';
+import TalkingHeadAvatar from './components/avatar/TalkingHeadAvatar';
 import ChatInterface from './components/ChatInterface';
 import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
@@ -66,10 +66,10 @@ function App() {
                 setModelReady(true);
                 setStatus('Ready to chat!');
 
-                // Speak greeting if TTS is ready
-                if (ttsService.isReady()) {
-                    ttsService.speak(greeting.content);
-                }
+                // Speak greeting
+                ttsService.speak(greeting.content).catch(err => {
+                    console.warn('TTS not ready yet:', err);
+                });
 
                 console.log('✅ Phuntroo is ready as your friend!');
             } catch (error) {
@@ -134,7 +134,6 @@ function App() {
             if (newOutfit && newOutfit.name !== currentOutfit?.name) {
                 console.log(`👗 Changing outfit to: ${newOutfit.name}`);
                 setCurrentOutfit(newOutfit);
-                // You would pass this to Avatar3D if it supports texture swapping
             }
 
             const aiMessage = {
@@ -242,7 +241,7 @@ function App() {
                 if (needsToken) {
                     const token = window.prompt(
                         'Paste your GitHub Personal Access Token:\n' +
-                        '(Generate at: https://github.com/settings/tokens with "repo" scope)'
+                        '(Generate at: https://github.com/settings/tokens with \"repo\" scope)'
                     );
                     if (token) {
                         memorySync.setToken(token);
@@ -287,7 +286,7 @@ function App() {
             <main className="app-main">
                 <div className="avatar-panel">
                     <div className="avatar-container">
-                        <Avatar3D
+                        <TalkingHeadAvatar
                             expression={currentEmotion}
                             visemes={ttsService.visemeQueue}
                             avatarState={
@@ -296,7 +295,7 @@ function App() {
                                         isRecording ? 'listening' :
                                             'idle'
                             }
-                            url="/phuntroo/models/avatar.vrm"
+                            isSeeing={isSeeing}
                         />
                     </div>
                 </div>
