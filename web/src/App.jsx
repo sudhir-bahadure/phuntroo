@@ -9,6 +9,8 @@ import { memorySync } from './utils/MemorySync';
 import { autonomyManager } from './services/autonomy/AutonomyManager';
 import { getSmartOutfit } from './services/OutfitService';
 import { visionService } from './services/vision/VisionService';
+import { autonomousBrain } from './services/brain/AutonomousBrain';
+import BrainMonitor from './components/BrainMonitor';
 import './App.css';
 
 function App() {
@@ -66,6 +68,9 @@ function App() {
 
                 setModelReady(true);
                 setStatus('Ready to chat!');
+
+                // Start autonomous brain
+                autonomousBrain.start();
 
                 // Speak greeting
                 ttsService.speak(greeting.content).catch(err => {
@@ -348,6 +353,7 @@ function App() {
                     }
                 </p>
             </footer>
+            <BrainMonitor />
         </div>
     );
 }
