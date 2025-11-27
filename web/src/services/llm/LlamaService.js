@@ -58,7 +58,8 @@ Personality:
                 formattedMessages.push({ role: "user", content: messages });
             }
 
-            // 3. Handle Vision (Image Input)
+            // 3. Handle Vision (Image Input) - TEMPORARILY DISABLED (Model doesn't support vision)
+            /*
             if (context.image) {
                 // Add image to the last user message
                 const lastMsg = formattedMessages[formattedMessages.length - 1];
@@ -69,6 +70,7 @@ Personality:
                     ];
                 }
             }
+            */
 
             // 4. Send to Cloudflare Worker (Groq Proxy)
             const response = await fetch(this.apiUrl, {
@@ -78,7 +80,7 @@ Personality:
                 },
                 body: JSON.stringify({
                     messages: formattedMessages,
-                    model: "llama-3.2-11b-vision-preview", // Groq Vision Model
+                    model: "llama-3.3-70b-versatile", // Updated to supported model
                     temperature: 0.7,
                     max_tokens: 150,
                     stream: false
