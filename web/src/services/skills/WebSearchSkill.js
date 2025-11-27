@@ -1,6 +1,6 @@
 /**
- * Web Search Skill using DuckDuckGo
- * Free, no API key required
+ * Web Search Skill using DuckDuckGo HTML Scraping
+ * Free, no API key required, robust results
  */
 
 class WebSearchSkill {
@@ -10,51 +10,59 @@ class WebSearchSkill {
     }
 
     /**
-     * Search DuckDuckGo and return results
+     * Search DuckDuckGo HTML and parse results (more reliable than API)
      */
     async search(query, maxResults = 5) {
         try {
             console.log(`🔍 Searching: "${query}"`);
 
-            // Use DuckDuckGo Instant Answer API (free, no key)
-            // Routed through AllOrigins to bypass CORS
-            const ddgUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+            // Use DuckDuckGo HTML version via AllOrigins proxy
+            const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
             const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(ddgUrl)}`;
 
             const response = await fetch(proxyUrl);
             const proxyData = await response.json();
 
-            // Parse the actual contents from the proxy
-            const data = JSON.parse(proxyData.contents);
+            if (!proxyData.contents) return [];
 
+            const html = proxyData.contents;
             const results = [];
 
-            // Extract instant answer
-            if (data.Abstract) {
-                results.push({
-                    title: data.Heading || 'Instant Answer',
-                    snippet: data.Abstract,
-                    url: data.AbstractURL || '',
-                    source: data.AbstractSource || 'DuckDuckGo'
-                });
-            }
+            // Regex to extract results from DDG HTML
+            // Looks for <a class="result__a" href="...">Title</a>
+            const resultRegex = /<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/g;
 
-            // Extract related topics
-            if (data.RelatedTopics && data.RelatedTopics.length > 0) {
-                data.RelatedTopics.slice(0, maxResults - 1).forEach(topic => {
-                    if (topic.Text && topic.FirstURL) {
-                        results.push({
-                            title: topic.Text.split(' - ')[0] || 'Related',
-                            snippet: topic.Text,
-                            url: topic.FirstURL,
-                            source: 'DuckDuckGo'
-                        });
-                    }
+            // Regex for snippets (result__snippet)
+            const snippetRegex = /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>(.*?)<\/a>/g;
+
+            let match;
+            let count = 0;
+
+            while ((match = resultRegex.exec(html)) !== null && count < maxResults) {
+                let url = match[1];
+                let title = match[2].replace(/<[^>]+>/g, ''); // Strip HTML tags
+
+                // Decode URL if needed (DDG sometimes wraps them)
+                if (url.startsWith('/l/?kh=-1&uddg=')) {
+                    url = decodeURIComponent(url.split('uddg=')[1].split('&')[0]);
+                }
+
+                // Try to find snippet (simple approximation)
+                let snippet = "No description available";
+                // In a real DOM parser this is easier, but regex is lighter for now
+
+                results.push({
+                    title: title,
+                    snippet: snippet,
+                    url: url,
+                    source: 'DuckDuckGo'
                 });
+                count++;
             }
 
             console.log(`✅ Found ${results.length} results`);
             return results;
+
         } catch (error) {
             console.error('Search error:', error);
             return [];
@@ -92,8 +100,8 @@ class WebSearchSkill {
     async getQuickFact(topic) {
         const results = await this.search(topic, 1);
 
-        if (results.length > 0 && results[0].snippet) {
-            return results[0].snippet;
+        if (results.length > 0) {
+            return `${results[0].title}: ${results[0].snippet}`;
         }
 
         return null;

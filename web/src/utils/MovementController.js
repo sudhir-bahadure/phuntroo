@@ -16,12 +16,12 @@ export class MovementController {
         this.movementSpeed = 0.5; // units per second
         this.rotationSpeed = 2; // radians per second
 
-        // Movement boundaries
+        // Movement boundaries (tightened to keep avatar in view)
         this.boundaries = {
-            minX: -2,
-            maxX: 2,
-            minZ: -2,
-            maxZ: 2
+            minX: -0.8,
+            maxX: 0.8,
+            minZ: 0.5,
+            maxZ: 1.5
         };
 
         this.listeners = [];
