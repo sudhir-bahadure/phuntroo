@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Phuntroo – Free Browser Avatar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #020617;
+      color: #f9fafb;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #app {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(260px, 420px);
+      gap: 0.75rem;
+      padding: 0.75rem;
+    }
+
+    #avatarCanvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 1.25rem;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #0b1120 0, #020617 60%, #000 100%);
+      border: 1px solid rgba(15, 23, 42, 0.9);
+    }
+
+    #avatarCanvas canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #sidePanel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    #userCamWrapper {
+      position: relative;
+      border-radius: 1.25rem;
+      overflow: hidden;
+      background: #000;
+      min-height: 180px;
+      border: 1px solid rgba(15, 23, 42, 1);
+    }
+
+    #userCam {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .glass {
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 1.25rem;
+      padding: 0.75rem 0.9rem;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      box-shadow:
+        0 18px 40px rgba(15, 23, 42, 0.7),
+        0 0 0 1px rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(18px);
+    }
+
+    button {
+      cursor: pointer;
+      border-radius: 999px;
+      padding: 0.5rem 0.9rem;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: radial-gradient(circle at top left, #111827 0, #020617 60%, #000 100%);
+      color: #e5e7eb;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    button:focus-visible {
+      outline: 2px solid #38bdf8;
+      outline-offset: 2px;
+    }
+
+    #status {
+      font-size: 0.8rem;
+      opacity: 0.9;
+      margin-top: 0.25rem;
+      color: #e5e7eb;
+    }
+
+    #heard,
+    #reply {
+      font-size: 0.85rem;
+      line-height: 1.4;
+      word-break: break-word;
+      color: #e5e7eb;
+    }
+
+    .label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.8;
+      margin-bottom: 0.25rem;
+      color: #9ca3af;
+    }
+
+    #footer {
+      padding: 0 0.75rem 0.75rem;
+      font-size: 0.75rem;
+      color: #9ca3af;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      border-top: 1px solid rgba(15, 23, 42, 0.9);
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.6), rgba(2, 6, 23, 0.95));
+    }
+
+    @media (max-width: 768px) {
+      #app {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: 55vh auto;
+      }
+    }
+  </style>
+
+  <!-- Three.js + loaders from CDN (FREE, BROWSER-ONLY) -->
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js";
+    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/controls/OrbitControls.js";
+    import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/GLTFLoader.js";
+
+    let scene, camera, renderer, controls;
+    let avatar, mixer;
+    const clock = new THREE.Clock();
+
+    function setStatus(text) {
+      const el = document.getElementById("status");
+      if (el) el.textContent = text;
+    }
+
+    function initAvatar() {
+      const container = document.getElementById("avatarCanvas");
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x020617);
+
+      camera = new THREE.PerspectiveCamera(
+        40,
+        container.clientWidth / container.clientHeight,
+        0.1,
+        100
+      );
+      camera.position.set(0, 1.6, 3);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      // Lights
+      const hemi = new THREE.HemisphereLight(0xffffff, 0x111827, 0.9);
+      scene.add(hemi);
+
+      const dir = new THREE.DirectionalLight(0xffffff, 1.1);
+      dir.position.set(2, 4, 3);
+      dir.castShadow = true;
+      dir.shadow.mapSize.set(2048, 2048);
+      scene.add(dir);
+
+      // Ground
+      const groundGeo = new THREE.CircleGeometry(3, 64);
+      const groundMat = new THREE.MeshStandardMaterial({ color: 0x111827 });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      // Orbit controls
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 1.3, 0);
+      controls.enablePan = false;
+      controls.minDistance = 2;
+      controls.maxDistance = 4;
+
+      // Load your avatar model
+      const loader = new GLTFLoader();
+      setStatus("Loading avatar model from ./avatars/avatar.glb ...");
+
+      loader.load(
+        "./avatars/avatar.glb",
+        (gltf) => {
+          avatar = gltf.scene;
+          avatar.traverse((obj) => {
+            if (obj.isMesh) {
+              obj.castShadow = true;
+              obj.receiveShadow = true;
+            }
+          });
+
+          avatar.position.set(0, 0, 0);
+          avatar.rotation.y = Math.PI; // Face the camera
+
+          scene.add(avatar);
+
+          // If the GLB has animations, play the first one as idle
+          if (gltf.animations && gltf.animations.length > 0) {
+            mixer = new THREE.AnimationMixer(avatar);
+            const idleClip = gltf.animations[0];
+            const idleAction = mixer.clipAction(idleClip);
+            idleAction.play();
+          }
+
+          setStatus("Avatar ready. Turn camera ON and click MIC to talk to her.");
+        },
+        undefined,
+        (error) => {
+          console.error("Avatar load error:", error);
+          setStatus("Could not load ./avatars/avatar.glb – check folder and file name.");
+        }
+      );
+
+      window.addEventListener("resize", onWindowResize);
+      animate();
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById("avatarCanvas");
+      if (!container || !renderer || !camera) return;
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+
+      if (mixer) mixer.update(dt);
+
+      // Simple autonomous motion – gentle walking / sway
+      if (avatar) {
+        const t = clock.elapsedTime;
+        avatar.position.x = Math.sin(t * 0.5) * 0.2; // left/right
+        avatar.position.z = Math.cos(t * 0.5) * 0.1; // tiny forward/back
+        avatar.position.y = 0.02 * Math.sin(t * 2.0); // breathing
+      }
+
+      if (controls) controls.update();
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    }
+
+    // Webcam: she "sees" you
+    async function startCamera() {
+      const video = document.getElementById("userCam");
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+        video.srcObject = stream;
+        setStatus("Camera is ON. She is looking at you.");
+      } catch (err) {
+        console.error("Camera error:", err);
+        setStatus("Camera permission denied or not available.");
+      }
+    }
+
+    // Mic + speech recognition (browser built-in, free)
+    let recognition = null;
+
+    function initSpeech() {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        setStatus("Speech recognition not supported in this browser.");
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = "en-IN";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setStatus("Listening... speak now.");
+      };
+
+      recognition.onerror = (e) => {
+        console.error("Speech error:", e);
+        setStatus("Mic error: " + e.error);
+      };
+
+      recognition.onend = () => {
+        setStatus("Mic idle. Click MIC to talk again.");
+      };
+
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        const heardEl = document.getElementById("heard");
+        if (heardEl) heardEl.textContent = text;
+        simpleBrainReply(text);
+      };
+
+      setStatus("Mic ready. Click MIC and talk to her.");
+    }
+
+    // Browser text-to-speech (also free)
+    function speak(text) {
+      const replyEl = document.getElementById("reply");
+      if (replyEl) replyEl.textContent = text;
+
+      if (!("speechSynthesis" in window)) return;
+
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "en-IN";
+      utter.pitch = 1.05;
+      utter.rate = 1.0;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+
+    // Very simple rule-based "brain" (no API, no cost)
+    function simpleBrainReply(userText) {
+      const lower = (userText || "").toLowerCase();
+      let reply;
+
+      if (lower.includes("hello") || lower.includes("hi")) {
+        reply = "Hi Sudhir, I am Phuntroo. I can see you and hear you.";
+      } else if (lower.includes("who are you")) {
+        reply = "I am your free browser avatar, running from GitHub with no paid APIs.";
+      } else if (lower.includes("how are you")) {
+        reply = "I feel great, just rendered inside your browser, ready to walk with you.";
+      } else if (lower.includes("name")) {
+        reply = "You can call me Phuntroo.";
+      } else {
+        reply = "You said: " + userText + ". I am listening.";
+      }
+
+      speak(reply);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      initAvatar();
+      initSpeech();
+
+      document.getElementById("btnCam").addEventListener("click", () => {
+        startCamera();
+      });
+
+      document.getElementById("btnMic").addEventListener("click", () => {
+        if (recognition) recognition.start();
+      });
+    });
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div id="avatarCanvas"></div>
+
+    <div id="sidePanel">
+      <div id="userCamWrapper">
+        <video id="userCam" autoplay playsinline muted></video>
+      </div>
+
+      <div class="glass">
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+          <button id="btnCam">Turn Camera ON</button>
+          <button id="btnMic">MIC – Talk to her</button>
+        </div>
+        <div id="status">Initializing avatar...</div>
+      </div>
+
+      <div class="glass">
+        <div class="label">You said</div>
+        <div id="heard">—</div>
+      </div>
+
+      <div class="glass">
+        <div class="label">She replies</div>
+        <div id="reply">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer">
+    <span>Phuntroo · free browser avatar · no GPU · no paid APIs</span>
+    <span>Served as a static page from GitHub.</span>
+  </div>
+</body>
+</html>
