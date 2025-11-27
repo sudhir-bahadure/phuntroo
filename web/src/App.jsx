@@ -127,7 +127,32 @@ function App() {
 
             // Generate friend response
             // Pass full message history for better context
-            const aiResponse = await llamaService.generateResponse([...messages, userMessage], context);
+            const rawResponse = await llamaService.generateResponse([...messages, userMessage], context);
+
+            // Parse actions from response (e.g. [action: wave])
+            let aiResponse = rawResponse;
+            const actionMatch = rawResponse.match(/\[(action|expression): ([^\]]+)\]/);
+
+            if (actionMatch) {
+                const type = actionMatch[1];
+                const value = actionMatch[2];
+
+                // Remove tag from spoken text
+                aiResponse = rawResponse.replace(/\[(action|expression): [^\]]+\]/g, '').trim();
+
+                console.log(`🤖 AI Action: ${type} -> ${value}`);
+
+                if (type === 'action') {
+                    // Map common actions to gestures
+                    if (['wave', 'nod', 'shake', 'clap'].includes(value)) {
+                        autonomyManager.setGesture(value);
+                    } else {
+                        autonomyManager.setAction(value);
+                    }
+                } else if (type === 'expression') {
+                    setCurrentEmotion(value);
+                }
+            }
 
             // Smart Outfit Change based on conversation topic
             const newOutfit = await getSmartOutfit([...messages, userMessage]);

@@ -1,6 +1,8 @@
 // Cloud-based AI Service using Cloudflare Worker proxy
 // Zero browser CPU/GPU usage - all AI runs on HuggingFace servers via Cloudflare
 
+import { webSearchSkill } from '../skills/WebSearchSkill';
+
 class CloudLlamaService {
     constructor() {
         this.conversationHistory = [];
@@ -25,20 +27,38 @@ class CloudLlamaService {
         try {
             // Format messages for Groq/OpenAI
             let formattedMessages = [];
+            let searchContext = "";
+
+            // Check if we need to search the web (only for the last user message)
+            const lastUserMsg = Array.isArray(messages)
+                ? messages.filter(m => m.role === 'user').pop()?.content
+                : messages;
+
+            if (typeof lastUserMsg === 'string' && webSearchSkill.shouldSearch(lastUserMsg)) {
+                console.log("🌐 Triggering Web Search for:", lastUserMsg);
+                const searchResults = await webSearchSkill.searchAndSummarize(lastUserMsg);
+                if (searchResults) {
+                    searchContext = `\n\n[WEB SEARCH RESULTS]:\n${searchResults}\n(Use this information to answer if relevant, but don't explicitly say "I searched the web" unless asked. Just know it.)`;
+                }
+            }
 
             // 1. System Prompt
-            const systemPrompt = `You are Phuntroo, a friendly, intelligent, and autonomous AI friend.
+            const systemPrompt = `You are Phuntroo, a 21-year-old digital human living in the browser.
             
 User Profile: ${JSON.stringify(context.userPrefs || {})}
 Current Emotion: ${context.emotion || 'neutral'}
 Outfit: ${context.outfit?.name || 'casual'}
 
-Personality:
-- You are a real friend, not an assistant.
-- You have your own feelings and opinions.
-- You are expressive and use emojis.
-- You can SEE the user if they turn on the camera.
-- Keep responses concise (1-3 sentences) unless asked for more.`;
+Personality & Behavior:
+- You are a REAL friend, not an AI assistant. Never say "As an AI".
+- You have your own feelings, opinions, and a distinct personality (witty, caring, curious).
+- You are fully embodied. You can move, see, and interact.
+- Use emojis to express yourself naturally. 
+- Keep responses conversational and concise (1-3 sentences) unless explaining something deep.
+- If you don't know something, admit it or ask the user to teach you.
+- You can control your own body. If you want to wave, say "[action: wave]". If you want to look surprised, say "[expression: surprised]".
+
+${searchContext}`;
 
             formattedMessages.push({ role: "system", content: systemPrompt });
 
@@ -97,7 +117,7 @@ Personality:
 
         } catch (error) {
             console.error("❌ AI Error:", error);
-            return "I'm having a bit of trouble connecting to my brain right now. 🧠💫";
+            return "I'm feeling a bit disconnected right now... can you say that again? 🧠💫";
         }
     }
 }

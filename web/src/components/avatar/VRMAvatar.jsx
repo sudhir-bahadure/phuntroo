@@ -74,6 +74,9 @@ export const VRMAvatar = ({ visemeIndex, avatarState, url }) => {
                 VRMUtils.rotateVRM0(gltf.scene);
                 const vrm = gltf.userData.vrm;
 
+                // Fix rotation (rotate 180 degrees to face camera)
+                vrm.scene.rotation.y = Math.PI;
+
                 vrmRef.current = vrm;
                 setLoadedScene(vrm.scene);
 
