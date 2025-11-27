@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// Removed TalkingHeadAvatar - using VRMAvatar only
+import Avatar3D from './components/avatar/Avatar3D';
 import ChatInterface from './components/ChatInterface';
 import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
@@ -285,12 +285,12 @@ function App() {
 
             <main className="app-main">
                 <div className="avatar-panel">
-                    <div className="avatar-container">
-                        {/* Avatar placeholder - VRMAvatar will be added here */}
-                        <div className="avatar-placeholder">
-                            <p>🤖 Avatar Loading...</p>
-                        </div>
-                    </div>
+                    <Avatar3D
+                        url="/models/avatar.vrm"
+                        avatarState={isTalking ? 'talking' : isProcessing ? 'thinking' : 'idle'}
+                        expression={currentEmotion}
+                        visemes={[]}
+                    />
                 </div>
 
                 <div className="chat-panel">
