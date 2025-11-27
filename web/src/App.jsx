@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import TalkingHeadAvatar from './components/avatar/TalkingHeadAvatar';
+// Removed TalkingHeadAvatar - using VRMAvatar only
 import ChatInterface from './components/ChatInterface';
 import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
@@ -286,17 +286,10 @@ function App() {
             <main className="app-main">
                 <div className="avatar-panel">
                     <div className="avatar-container">
-                        <TalkingHeadAvatar
-                            expression={currentEmotion}
-                            visemes={ttsService.visemeQueue}
-                            avatarState={
-                                isTalking ? 'talking' :
-                                    isProcessing ? 'thinking' :
-                                        isRecording ? 'listening' :
-                                            'idle'
-                            }
-                            isSeeing={isSeeing}
-                        />
+                        {/* Avatar placeholder - VRMAvatar will be added here */}
+                        <div className="avatar-placeholder">
+                            <p>🤖 Avatar Loading...</p>
+                        </div>
                     </div>
                 </div>
 

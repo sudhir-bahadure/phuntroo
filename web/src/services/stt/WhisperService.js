@@ -36,9 +36,13 @@ export class WhisperService {
             // Dynamic import to prevent page load freeze
             const transformers = await import('@xenova/transformers');
 
-            // Null check for transformers
-            if (!transformers || !transformers.pipeline) {
-                throw new Error('Transformers library not loaded properly');
+            // Comprehensive null check for transformers
+            if (!transformers || typeof transformers !== 'object') {
+                throw new Error('Transformers library not loaded properly - module is null or invalid');
+            }
+
+            if (typeof transformers.pipeline !== 'function') {
+                throw new Error('Transformers library not loaded properly - pipeline function not found');
             }
 
             // Load the automatic speech recognition pipeline
