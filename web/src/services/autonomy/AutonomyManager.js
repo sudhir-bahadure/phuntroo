@@ -4,6 +4,7 @@
  */
 
 import { movementController } from '../../utils/MovementController';
+import { skeletonController } from '../../utils/SkeletonController';
 import { ANIMATION_LIBRARY } from '../../utils/AnimationLoader';
 
 class AutonomyManager {
@@ -169,9 +170,18 @@ Context:
 - Last Message: ${context.lastMessage || 'none'}
 - Time since last movement: ${Date.now() - this.lastMovementTime}ms
 
-Choose ONE action from: walk_random, gesture_wave, gesture_think, gesture_nod, idle, excited_idle, sad_idle, looking_around
+Actions:
+1. High-level action: walk_random, gesture_wave, gesture_think, gesture_nod, idle, excited_idle, sad_idle, looking_around
+2. Bone Control (Optional): Set rotation for specific bones (Euler angles in radians).
+   Supported bones: head, neck, spine, hips, leftUpperArm, rightUpperArm, leftLowerArm, rightLowerArm.
+   Example: "bones": {"head": [0.2, 0, 0], "leftUpperArm": [0, 0, 1.5]}
 
-Respond with ONLY a JSON object: {"action": "chosen_action", "reason": "brief reason"}`;
+Respond with ONLY a JSON object: 
+{
+  "action": "chosen_action", 
+  "reason": "brief reason",
+  "bones": { ... } (optional)
+}`;
 
             const response = await llamaService.generateResponse(
                 [{ role: 'user', content: prompt }],
@@ -184,7 +194,7 @@ Respond with ONLY a JSON object: {"action": "chosen_action", "reason": "brief re
                 const decision = JSON.parse(match[0]);
                 console.log(`🤖 AI Decision: ${decision.action} (${decision.reason})`);
 
-                // Execute the decision
+                // Execute high-level action
                 if (decision.action.startsWith('walk_')) {
                     this.decideMovement(context);
                 } else if (decision.action.startsWith('gesture_')) {
@@ -192,6 +202,14 @@ Respond with ONLY a JSON object: {"action": "chosen_action", "reason": "brief re
                     this.setGesture(gesture);
                 } else {
                     this.setAction(decision.action);
+                }
+
+                // Execute bone control
+                if (decision.bones) {
+                    Object.keys(decision.bones).forEach(boneName => {
+                        skeletonController.setTarget(boneName, decision.bones[boneName], 2.0);
+                    });
+                    console.log(`💀 Bone control applied: ${Object.keys(decision.bones).join(', ')}`);
                 }
             }
         } catch (error) {

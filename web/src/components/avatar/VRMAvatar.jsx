@@ -5,6 +5,7 @@ import { VRMUtils, VRMLoaderPlugin } from "@pixiv/three-vrm";
 import { GLTFLoader } from 'three-stdlib';
 // import { useVRMAnimations } from '../../hooks/useVRMAnimations';
 import { movementController } from '../../utils/MovementController';
+import { skeletonController } from '../../utils/SkeletonController';
 // import { autonomyManager } from '../../services/autonomy/AutonomyManager';
 
 const VISEME_NAMES = ["aa", "ih", "ou", "ee", "oh", "sil"];
@@ -107,39 +108,60 @@ export const VRMAvatar = ({ visemeIndex, avatarState, url }) => {
             vrm.scene.rotation.y = rotation;
         }
 
-        // ==== AUTONOMOUS GAZE & HEAD TRACKING ====
-        // Calculate target based on state
-        let targetLookAt = { x: 0, y: 0 };
+        // ==== SKELETON CONTROL (AI) ====
+        // Apply AI-driven bone rotations
+        skeletonController.update(delta);
 
-        if (avatarState === 'listening') {
-            // Look at user (camera)
-            targetLookAt = { x: 0, y: 0 };
-        } else if (avatarState === 'thinking') {
-            // Look up/away
-            targetLookAt = { x: 0.5, y: 0.5 };
-        } else if (avatarState === 'talking') {
-            // Look at user but with some natural motion
-            targetLookAt = {
-                x: Math.sin(t * 0.5) * 0.1,
-                y: Math.sin(t * 0.3) * 0.05
-            };
-        } else {
-            // Idle: Look around randomly
-            targetLookAt = {
-                x: Math.sin(t * 0.2) * 0.3 + Math.sin(t * 1.5) * 0.1,
-                y: Math.sin(t * 0.15) * 0.1
-            };
+        const humanoid = vrm.humanoid;
+        if (humanoid) {
+            skeletonController.supportedBones.forEach(boneName => {
+                const rotation = skeletonController.getBoneRotation(boneName);
+                if (rotation) {
+                    const bone = humanoid.getNormalizedBoneNode(boneName);
+                    if (bone) {
+                        // Apply rotation (overrides procedural if set)
+                        bone.quaternion.copy(rotation);
+                    }
+                }
+            });
         }
 
-        // Smoothly interpolate current pointer/lookAt
-        pointer.current.x += (targetLookAt.x - pointer.current.x) * 0.05;
-        pointer.current.y += (targetLookAt.y - pointer.current.y) * 0.05;
+        // ==== AUTONOMOUS GAZE & HEAD TRACKING ====
+        // Only apply gaze tracking if head is NOT controlled by AI
+        if (!skeletonController.getBoneRotation('head')) {
+            // Calculate target based on state
+            let targetLookAt = { x: 0, y: 0 };
 
-        // Apply to head
-        const head = vrm.humanoid?.getNormalizedBoneNode("head");
-        if (head) {
-            head.rotation.y = pointer.current.x * 0.6;
-            head.rotation.x = pointer.current.y * 0.4;
+            if (avatarState === 'listening') {
+                // Look at user (camera)
+                targetLookAt = { x: 0, y: 0 };
+            } else if (avatarState === 'thinking') {
+                // Look up/away
+                targetLookAt = { x: 0.5, y: 0.5 };
+            } else if (avatarState === 'talking') {
+                // Look at user but with some natural motion
+                targetLookAt = {
+                    x: Math.sin(t * 0.5) * 0.1,
+                    y: Math.sin(t * 0.3) * 0.05
+                };
+            } else {
+                // Idle: Look around randomly
+                targetLookAt = {
+                    x: Math.sin(t * 0.2) * 0.3 + Math.sin(t * 1.5) * 0.1,
+                    y: Math.sin(t * 0.15) * 0.1
+                };
+            }
+
+            // Smoothly interpolate current pointer/lookAt
+            pointer.current.x += (targetLookAt.x - pointer.current.x) * 0.05;
+            pointer.current.y += (targetLookAt.y - pointer.current.y) * 0.05;
+
+            // Apply to head
+            const head = vrm.humanoid?.getNormalizedBoneNode("head");
+            if (head) {
+                head.rotation.y = pointer.current.x * 0.6;
+                head.rotation.x = pointer.current.y * 0.4;
+            }
         }
 
         // ==== BLINKING ====
@@ -164,47 +186,55 @@ export const VRMAvatar = ({ visemeIndex, avatarState, url }) => {
 
         const breathe = (Math.sin(breatheTime.current) + 1) * 0.02;
         const chest = vrm.humanoid?.getNormalizedBoneNode("chest");
-        if (chest) {
+        // Only apply breathing if chest not controlled by AI
+        if (chest && !skeletonController.getBoneRotation('chest')) {
             chest.position.y = breathe;
         }
 
         // ==== INTERACTION PHYSICS / IDLE MOTION ====
-        // Only apply procedural arm movements if no clip animation is playing
+        // Only apply procedural arm movements if no clip animation is playing AND arms not controlled by AI
         if (!isPlaying || isTransitioning) {
             const spine = vrm.humanoid?.getNormalizedBoneNode("spine");
             const leftArm = vrm.humanoid?.getNormalizedBoneNode("leftUpperArm");
             const rightArm = vrm.humanoid?.getNormalizedBoneNode("rightUpperArm");
 
             if (spine && leftArm && rightArm) {
-                // Base sway
-                const swayAmount = avatarState === 'talking' ? 0.05 : 0.02;
-                const swayX = Math.sin(t * 0.5) * swayAmount;
-                const swayY = Math.cos(t * 0.3) * swayAmount;
+                // Base sway (only if spine not controlled)
+                if (!skeletonController.getBoneRotation('spine')) {
+                    const swayAmount = avatarState === 'talking' ? 0.05 : 0.02;
+                    const swayX = Math.sin(t * 0.5) * swayAmount;
+                    const swayY = Math.cos(t * 0.3) * swayAmount;
 
-                spine.rotation.z = swayX;
-                spine.rotation.x = swayY;
-
-                // Arms - Natural hang
-                let leftArmTargetZ = -1.4; // ~80 deg down
-                let rightArmTargetZ = 1.4;
-
-                // Gestures when talking
-                if (avatarState === 'talking') {
-                    leftArmTargetZ += Math.sin(t * 3) * 0.1;
-                    rightArmTargetZ -= Math.sin(t * 3) * 0.1;
-
-                    // Occasional emphasis
-                    if (Math.sin(t * 1) > 0.8) {
-                        rightArm.rotation.x = Math.sin(t * 5) * 0.2;
-                    }
+                    spine.rotation.z = swayX;
+                    spine.rotation.x = swayY;
                 }
 
-                leftArm.rotation.z = leftArmTargetZ + swayX * 0.5;
-                rightArm.rotation.z = rightArmTargetZ + swayX * 0.5;
+                // Arms - Natural hang (only if arms not controlled)
+                if (!skeletonController.getBoneRotation('leftUpperArm')) {
+                    let leftArmTargetZ = -1.4; // ~80 deg down
+                    // Gestures when talking
+                    if (avatarState === 'talking') {
+                        leftArmTargetZ += Math.sin(t * 3) * 0.1;
+                    }
+                    // Sway influence
+                    const swayX = Math.sin(t * 0.5) * (avatarState === 'talking' ? 0.05 : 0.02);
+                    leftArm.rotation.z = leftArmTargetZ + swayX * 0.5;
+                    leftArm.rotation.x = Math.sin(breatheTime.current) * 0.03;
+                }
 
-                // Breathing effect on arms
-                leftArm.rotation.x = Math.sin(breatheTime.current) * 0.03;
-                rightArm.rotation.x = Math.sin(breatheTime.current) * 0.03;
+                if (!skeletonController.getBoneRotation('rightUpperArm')) {
+                    let rightArmTargetZ = 1.4;
+                    if (avatarState === 'talking') {
+                        rightArmTargetZ -= Math.sin(t * 3) * 0.1;
+                        // Occasional emphasis
+                        if (Math.sin(t * 1) > 0.8) {
+                            rightArm.rotation.x = Math.sin(t * 5) * 0.2;
+                        }
+                    }
+                    const swayX = Math.sin(t * 0.5) * (avatarState === 'talking' ? 0.05 : 0.02);
+                    rightArm.rotation.z = rightArmTargetZ + swayX * 0.5;
+                    rightArm.rotation.x = Math.sin(breatheTime.current) * 0.03;
+                }
             }
         }
 
