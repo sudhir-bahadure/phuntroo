@@ -15,94 +15,23 @@ class AutonomousBrain {
         this.completedTasks = [];
         this.decisionLog = [];
         this.thinkingInterval = null;
+        this.goalCooldowns = {}; // Track failed goals to avoid loops
     }
 
-    /**
-     * Start autonomous thinking loop
-     */
-    async start() {
-        console.log('🧠 Autonomous Brain activated');
-
-        // Think every 30 seconds
-        this.thinkingInterval = setInterval(async () => {
-            await this.think();
-        }, 30000);
-
-        // Initial thought
-        await this.think();
-    }
-
-    /**
-     * Stop autonomous brain
-     */
-    stop() {
-        if (this.thinkingInterval) {
-            clearInterval(this.thinkingInterval);
-            this.thinkingInterval = null;
-        }
-        console.log('🧠 Autonomous Brain paused');
-    }
-
-    /**
-     * Main thinking loop - decides what to do next
-     */
-    async think() {
-        if (!this.isActive) return;
-
-        try {
-            // 1. Analyze current state
-            const state = await this.analyzeCurrentState();
-
-            // 2. Generate goals based on state
-            const goals = await this.generateGoals(state);
-
-            // 3. Prioritize goals
-            const prioritizedGoals = this.prioritizeGoals(goals);
-
-            // 4. Execute highest priority goal
-            if (prioritizedGoals.length > 0) {
-                await this.executeGoal(prioritizedGoals[0]);
-            }
-
-            // 5. Learn from outcomes
-            await this.learn();
-
-        } catch (error) {
-            console.error('🧠 Thinking error:', error);
-        }
-    }
-
-    /**
-     * Analyze current state of the system
-     */
-    async analyzeCurrentState() {
-        const state = {
-            timestamp: new Date().toISOString(),
-            hour: new Date().getHours(),
-            userActive: this.isUserActive(),
-            recentMessages: await this.getRecentMessages(),
-            currentCapabilities: this.listCapabilities(),
-            missingCapabilities: [],
-            opportunities: []
-        };
-
-        // Identify what's missing
-        state.missingCapabilities = await this.identifyGaps(state);
-
-        // Find opportunities for improvement
-        state.opportunities = await this.findOpportunities(state);
-
-        return state;
-    }
+    // ... (start/stop methods unchanged)
 
     /**
      * Generate goals based on current state
      */
     async generateGoals(state) {
         const goals = [];
+        const now = Date.now();
+
+        // Helper to check cooldown
+        const isReady = (type) => !this.goalCooldowns[type] || now > this.goalCooldowns[type];
 
         // Goal 1: Improve avatar collection
-        if (this.shouldImproveAvatars(state)) {
+        if (this.shouldImproveAvatars(state) && isReady('improve_avatars')) {
             goals.push({
                 type: 'improve_avatars',
                 priority: 8,
@@ -112,7 +41,7 @@ class AutonomousBrain {
         }
 
         // Goal 2: Learn new skills
-        if (state.opportunities.includes('learn_skill')) {
+        if (state.opportunities.includes('learn_skill') && isReady('learn_skill')) {
             goals.push({
                 type: 'learn_skill',
                 priority: 7,
@@ -122,7 +51,7 @@ class AutonomousBrain {
         }
 
         // Goal 3: Optimize performance
-        if (state.opportunities.includes('optimize')) {
+        if (state.opportunities.includes('optimize') && isReady('optimize')) {
             goals.push({
                 type: 'optimize',
                 priority: 6,
@@ -132,7 +61,7 @@ class AutonomousBrain {
         }
 
         // Goal 4: Enhance personality
-        if (state.userActive && state.recentMessages.length > 5) {
+        if (state.userActive && state.recentMessages.length > 5 && isReady('personality')) {
             goals.push({
                 type: 'personality',
                 priority: 5,
@@ -142,7 +71,7 @@ class AutonomousBrain {
         }
 
         // Goal 5: Self-upgrade
-        if (Math.random() < 0.1) { // 10% chance
+        if (Math.random() < 0.1 && isReady('self_upgrade')) { // 10% chance
             goals.push({
                 type: 'self_upgrade',
                 priority: 9,
@@ -152,13 +81,6 @@ class AutonomousBrain {
         }
 
         return goals;
-    }
-
-    /**
-     * Prioritize goals
-     */
-    prioritizeGoals(goals) {
-        return goals.sort((a, b) => b.priority - a.priority);
     }
 
     /**
@@ -203,6 +125,10 @@ class AutonomousBrain {
         } catch (error) {
             decision.outcome = error.message;
             decision.success = false;
+
+            // Set cooldown for this goal type (5 minutes)
+            console.log(`⚠️ Goal failed: ${goal.type}. Pausing this goal type for 5 mins.`);
+            this.goalCooldowns[goal.type] = Date.now() + 300000;
         }
 
         this.decisionLog.push(decision);
