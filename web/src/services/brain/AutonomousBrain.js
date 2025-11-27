@@ -6,6 +6,7 @@
 import { llamaService } from '../llm/LlamaService';
 import { webSearchSkill } from '../skills/WebSearchSkill';
 import { memoryService } from '../memory/MemoryService';
+import { memorySync } from '../../utils/MemorySync';
 
 class AutonomousBrain {
     constructor() {
@@ -213,42 +214,6 @@ class AutonomousBrain {
     }
 
     /**
-     * AUTONOMOUS ACTION: Improve avatar collection
-     */
-    async improveAvatars() {
-        console.log('🎭 Autonomously improving avatar collection...');
-
-        // 1. Search for avatar resources (more specific queries)
-        const queries = [
-            "site:sketchfab.com free realistic human avatar glb download",
-            "site:readyplayer.me free avatar glb",
-            "free 3d model human glb download"
-        ];
-
-        const query = queries[Math.floor(Math.random() * queries.length)];
-        const searchResults = await webSearchSkill.search(query, 5);
-
-        if (searchResults.length === 0) {
-            return 'No new avatar sources found';
-        }
-
-        // 2. Curate and Store Suggestions (instead of failing download)
-        const suggestions = searchResults.map(r => ({
-            title: r.title,
-            url: r.url,
-            source: 'Autonomous Search',
-            timestamp: new Date().toISOString()
-        }));
-
-        // Store in memory for the user to review/download
-        await memoryService.storeMemory('suggested_avatars', suggestions);
-
-        return `Found ${searchResults.length} potential avatars. Saved to suggestions list.`;
-    }
-
-    /**
-     * AUTONOMOUS ACTION: Learn new skill
-     */
     async learnNewSkill() {
         console.log('📚 Autonomously learning new skill...');
 
