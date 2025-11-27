@@ -218,39 +218,32 @@ class AutonomousBrain {
     async improveAvatars() {
         console.log('🎭 Autonomously improving avatar collection...');
 
-        // 1. Search for avatar resources
-        const query = "free realistic human 3D avatar GLB download";
+        // 1. Search for avatar resources (more specific queries)
+        const queries = [
+            "site:sketchfab.com free realistic human avatar glb download",
+            "site:readyplayer.me free avatar glb",
+            "free 3d model human glb download"
+        ];
+
+        const query = queries[Math.floor(Math.random() * queries.length)];
         const searchResults = await webSearchSkill.search(query, 5);
 
         if (searchResults.length === 0) {
-            return 'No avatar sources found';
+            return 'No new avatar sources found';
         }
 
-        // 2. Analyze results with AI
-        const prompt = `I found these avatar resources:
-${searchResults.map((r, i) => `${i + 1}. ${r.title}: ${r.snippet}`).join('\n')}
-
-Which one looks most promising for downloading a realistic human avatar in GLB format?
-Respond with just the number (1-${searchResults.length}) and a brief reason.`;
-
-        const aiDecision = await llamaService.generateResponse([{
-            role: 'user',
-            content: prompt
-        }], {});
-
-        // 3. Log the decision
-        const logEntry = {
-            action: 'avatar_search',
-            query: query,
-            resultsFound: searchResults.length,
-            aiRecommendation: aiDecision,
+        // 2. Curate and Store Suggestions (instead of failing download)
+        const suggestions = searchResults.map(r => ({
+            title: r.title,
+            url: r.url,
+            source: 'Autonomous Search',
             timestamp: new Date().toISOString()
-        };
+        }));
 
-        // Store in memory
-        await memoryService.storeMemory('autonomous_actions', logEntry);
+        // Store in memory for the user to review/download
+        await memoryService.storeMemory('suggested_avatars', suggestions);
 
-        return `Found ${searchResults.length} avatar sources. AI recommendation: ${aiDecision}`;
+        return `Found ${searchResults.length} potential avatars. Saved to suggestions list.`;
     }
 
     /**
