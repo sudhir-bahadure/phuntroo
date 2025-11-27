@@ -17,10 +17,15 @@ class WebSearchSkill {
             console.log(`🔍 Searching: "${query}"`);
 
             // Use DuckDuckGo Instant Answer API (free, no key)
-            const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+            // Routed through AllOrigins to bypass CORS
+            const ddgUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(ddgUrl)}`;
 
-            const response = await fetch(url);
-            const data = await response.json();
+            const response = await fetch(proxyUrl);
+            const proxyData = await response.json();
+
+            // Parse the actual contents from the proxy
+            const data = JSON.parse(proxyData.contents);
 
             const results = [];
 
