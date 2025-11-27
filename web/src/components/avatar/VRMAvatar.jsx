@@ -127,6 +127,30 @@ export const VRMAvatar = ({ visemeIndex, avatarState, url }) => {
                     }
                 }
             });
+
+            // ==== WALKING ANIMATION ====
+            // Animate legs when moving
+            if (isMoving) {
+                const walkSpeed = 4.0;
+                const walkCycle = Math.sin(t * walkSpeed);
+
+                const leftUpperLeg = humanoid.getNormalizedBoneNode('leftUpperLeg');
+                const rightUpperLeg = humanoid.getNormalizedBoneNode('rightUpperLeg');
+                const leftLowerLeg = humanoid.getNormalizedBoneNode('leftLowerLeg');
+                const rightLowerLeg = humanoid.getNormalizedBoneNode('rightLowerLeg');
+
+                if (leftUpperLeg && rightUpperLeg) {
+                    // Swing legs back and forth
+                    leftUpperLeg.rotation.x = walkCycle * 0.5;
+                    rightUpperLeg.rotation.x = -walkCycle * 0.5;
+                }
+
+                if (leftLowerLeg && rightLowerLeg) {
+                    // Bend knees during walk
+                    leftLowerLeg.rotation.x = Math.max(0, walkCycle) * 0.3;
+                    rightLowerLeg.rotation.x = Math.max(0, -walkCycle) * 0.3;
+                }
+            }
         }
 
         // ==== AUTONOMOUS GAZE & HEAD TRACKING ====

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Avatar3D from './components/avatar/Avatar3D';
 import ChatInterface from './components/ChatInterface';
+import AutonomyLog from './components/AutonomyLog';
 import { llamaService } from './services/llm/LlamaService';
 import { whisperService } from './services/stt/WhisperService';
 import { ttsService } from './services/tts/TTSService';

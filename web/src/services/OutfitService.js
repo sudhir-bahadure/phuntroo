@@ -81,6 +81,23 @@ export function analyzeTopicForOutfit(conversationHistory) {
 }
 
 /**
+ * Get outfit based on current time of day
+ */
+export function getOutfitByTime() {
+    const hour = new Date().getHours();
+
+    if (hour >= 6 && hour < 12) {
+        return { name: 'Casual Morning', colors: ['#FFE4E1', '#87CEEB'] };
+    } else if (hour >= 12 && hour < 18) {
+        return { name: 'Formal Afternoon', colors: ['#4A4A4A', '#FFFFFF'] };
+    } else if (hour >= 18 && hour < 22) {
+        return { name: 'Evening Party', colors: ['#8B008B', '#FFD700'] };
+    } else {
+        return { name: 'Night Sleepwear', colors: ['#1C1C1C', '#F0E68C'] };
+    }
+}
+
+/**
  * Smart outfit selection using learned preferences
  */
 export async function getSmartOutfit(conversationHistory, learningEngine) {

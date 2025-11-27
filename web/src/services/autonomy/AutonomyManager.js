@@ -48,6 +48,13 @@ class AutonomyManager {
     }
 
     /**
+     * Get current action for logging
+     */
+    getCurrentAction() {
+        return this.currentAction;
+    }
+
+    /**
      * Decide next action based on context
      */
     decideAction(context) {
