@@ -1,132 +1,100 @@
-# Phuntroo Browser Avatar
+# Avatar Gallery System
 
-A standalone, fully browser-based 3D avatar application with webcam and speech integration.
+## 🎭 What is this?
 
-## Features
+A standalone 3D avatar gallery that lets you:
+- View multiple realistic human avatars
+- Download avatars from the internet (ReadyPlayerMe, AI-generated faces, etc.)
+- Switch between avatars instantly
+- Use webcam (she "sees" you)
+- **100% free, browser-only, no server required**
 
-✨ **Realistic 3D Avatar** - Full-body GLB model with animations  
-📹 **Webcam Integration** - "She sees you" via getUserMedia API  
-🎤 **Speech Recognition** - Voice input using browser SpeechRecognition  
-🔊 **Text-to-Speech** - Voice responses using speechSynthesis  
-🧠 **Simple AI** - Rule-based responses (no external APIs)  
-🆓 **Zero Cost** - Runs entirely in browser, no servers needed
+## 📍 Live URL
 
-## Quick Start
-
-### 1. Get Your Avatar Model
-
-1. Visit [ReadyPlayer.me](https://readyplayer.me)
-2. Create a full-body avatar
-3. Download as **GLB** format
-4. Rename the file to `avatar.glb`
-5. Place it in: `web/public/avatar/avatars/avatar.glb`
-
-### 2. Test Locally
-
-Open `web/public/avatar/index.html` in your browser (Chrome/Edge recommended for speech features).
-
-**OR** use a local server:
-```bash
-cd web/public/avatar
-python -m http.server 8000
-# Then visit: http://localhost:8000
-```
-
-### 3. Deploy to GitHub Pages
-
-The file is already in the `web/public` folder, so it will be automatically deployed when you push to GitHub.
-
-**Live URL** (after deployment):
+After deployment:
 ```
 https://sudhir-bahadure.github.io/phuntroo/avatar/
 ```
 
-## How to Use
-
-1. **Turn Camera ON** - Click to enable webcam
-2. **MIC – Talk to her** - Click and speak
-3. **Try saying**:
-   - "Hello" or "Hi"
-   - "Who are you?"
-   - "How are you?"
-   - "What's your name?"
-
-## Technical Details
-
-- **3D Engine**: Three.js (from CDN)
-- **Model Format**: GLB (GLTF Binary)
-- **Webcam**: `navigator.mediaDevices.getUserMedia()`
-- **Speech Input**: `SpeechRecognition` API (Chrome/Edge)
-- **Speech Output**: `speechSynthesis` API (all browsers)
-- **No Build Step**: Pure HTML + JavaScript
-- **No Dependencies**: Everything from CDN
-
-## Browser Compatibility
-
-| Feature | Chrome | Edge | Firefox | Safari |
-|---------|--------|------|---------|--------|
-| 3D Avatar | ✅ | ✅ | ✅ | ✅ |
-| Webcam | ✅ | ✅ | ✅ | ✅ |
-| Speech Recognition | ✅ | ✅ | ❌ | ❌ |
-| Text-to-Speech | ✅ | ✅ | ✅ | ✅ |
-
-**Recommended**: Chrome or Edge for full functionality
-
-## Customization
-
-### Change Avatar Behavior
-
-Edit the `animate()` function in `index.html`:
-```javascript
-// Adjust motion parameters
-avatar.position.x = Math.sin(t * 0.5) * 0.2; // left/right sway
-avatar.position.z = Math.cos(t * 0.5) * 0.1; // forward/back
-avatar.position.y = 0.02 * Math.sin(t * 2.0); // breathing
-```
-
-### Add More Responses
-
-Edit the `simpleBrainReply()` function:
-```javascript
-if (lower.includes("your keyword")) {
-  reply = "Your custom response";
-}
-```
-
-### Change Voice
-
-Edit the `speak()` function:
-```javascript
-utter.pitch = 1.05; // 0.5 to 2.0
-utter.rate = 1.0;   // 0.1 to 10
-```
-
-## Troubleshooting
-
-**Avatar doesn't load**:
-- Check that `avatar.glb` is in `avatars/` folder
-- Open browser console (F12) for error messages
-- Verify GLB file is valid (test at https://gltf-viewer.donmccurdy.com/)
-
-**Webcam not working**:
-- Allow camera permissions when prompted
-- Use HTTPS or localhost (required for getUserMedia)
-
-**Speech recognition not working**:
-- Use Chrome or Edge browser
-- Allow microphone permissions
-- Check that you're on HTTPS or localhost
-
-## File Structure
+## 📁 File Structure
 
 ```
 web/public/avatar/
-├── index.html          # Main application (all-in-one)
-├── avatars/
-│   └── avatar.glb      # Your 3D avatar model
-└── README.md           # This file
+  ├── index.html          ← Standalone gallery viewer
+  ├── avatars.json        ← Avatar library configuration
+  └── avatars/
+      ├── avatar1.glb     ← 3D avatar files
+      ├── avatar1.jpg     ← Thumbnail images
+      ├── avatar2.glb
+      └── avatar2.jpg
 ```
 
-## License
+## 🚀 How to Add New Avatars
 
-Free to use and modify. No attribution required.
+### Step 1: Get a .glb avatar file
+
+**Option A - ReadyPlayerMe (Full Body):**
+1. Go to https://readyplayer.me/avatar
+2. Create realistic avatar
+3. Export as `.glb`
+
+**Option B - AI Face (from photo):**
+1. Generate AI face at https://artbreeder.com
+2. Convert to 3D at https://meshcapade.com
+3. Download `.glb`
+
+**Option C - Download from gallery:**
+- Open `https://sudhir-bahadure.github.io/phuntroo/avatar/`
+- Paste direct `.glb` URL in "Download Avatar" section
+- Click "Download GLB"
+
+### Step 2: Upload files
+
+Upload to `web/public/avatar/avatars/`:
+- `my_avatar.glb` (the 3D model)
+- `my_avatar.jpg` (thumbnail image)
+
+### Step 3: Register in avatars.json
+
+Edit `web/public/avatar/avatars.json`, add:
+
+```json
+{
+  "id": "my_avatar",
+  "name": "My Custom Avatar",
+  "file": "avatars/my_avatar.glb",
+  "thumb": "avatars/my_avatar.jpg",
+  "source": "ReadyPlayerMe",
+  "notes": "Realistic human avatar"
+}
+```
+
+### Step 4: Deploy
+
+```bash
+cd d:\Jarvis-main
+git add web/public/avatar
+git commit -m "Add new avatar"
+git push origin main
+```
+
+Wait 2-3 minutes, then visit the gallery URL!
+
+## 🔗 Free Avatar Sources
+
+- **ReadyPlayerMe:** https://readyplayer.me/avatar (best for full body)
+- **Artbreeder:** https://artbreeder.com (AI faces)
+- **Meshcapade:** https://meshcapade.com (photo → 3D)
+- **Sketchfab:** https://sketchfab.com/tags/human (free models)
+- **FBX Converter:** https://fbxtogl.com (convert other formats)
+
+## 💻 Technical Details
+
+- **3D Engine:** Three.js (CDN, no build required)
+- **Format:** GLB (GLTF binary)
+- **Hosting:** GitHub Pages (static files)
+- **Cost:** $0
+
+## 🔧 Integration with Main App
+
+To integrate this gallery into your main React app later, I can provide a React component version that reads the same `avatars.json`.
