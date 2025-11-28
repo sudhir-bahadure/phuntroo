@@ -1,26 +1,10 @@
 [
     {
-        "id": "default_vrm",
-        "name": "Default VRM Avatar",
-        "file": "../models/avatar.vrm",
-        "thumb": "avatars/default_thumb.jpg",
-        "source": "VRM Model",
-        "notes": "Original VRM avatar - compatible with VRM loader"
-    },
-    {
-        "id": "ai_face_1",
-        "name": "AI Human Face 1",
-        "file": "avatars/ai_face_1.glb",
-        "thumb": "avatars/ai_face_1.jpg",
-        "source": "Artbreeder + Meshcapade",
-        "notes": "Realistic AI-generated face. Add your own .glb file here."
-    },
-    {
-        "id": "business_woman",
-        "name": "Business Woman",
-        "file": "avatars/business_woman.glb",
-        "thumb": "avatars/business_woman.jpg",
-        "source": "ReadyPlayerMe",
-        "notes": "Professional avatar from ReadyPlayerMe. Add your own file."
+        "id": "asian_female_casual",
+        "name": "Asian Female (Casual)",
+        "file": "./avatars/avatar.glb",
+        "thumb": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='60' x='20' font-size='60'%3E👩%3C/text%3E%3C/svg%3E",
+        "source": "VALID Library",
+        "notes": "Asian female avatar from University of Central Florida VALID diversity library"
     }
 ]
