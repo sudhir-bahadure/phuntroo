@@ -28,28 +28,32 @@ class WebSearchSkill {
             const html = proxyData.contents;
             const results = [];
 
-            // Regex to extract results from DDG HTML
-            // Looks for <a class="result__a" href="...">Title</a>
-            const resultRegex = /<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/g;
+            // Split by result body to keep title and snippet together
+            const resultBlocks = html.split('class="result__body"');
 
-            // Regex for snippets (result__snippet)
-            const snippetRegex = /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>(.*?)<\/a>/g;
+            // Skip the first block (it's before the first result)
+            for (let i = 1; i < resultBlocks.length && count < maxResults; i++) {
+                const block = resultBlocks[i];
 
-            let match;
-            let count = 0;
+                // Extract Title
+                const titleMatch = block.match(/<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>(.*?)<\/a>/);
+                if (!titleMatch) continue;
 
-            while ((match = resultRegex.exec(html)) !== null && count < maxResults) {
-                let url = match[1];
-                let title = match[2].replace(/<[^>]+>/g, ''); // Strip HTML tags
+                let url = titleMatch[1];
+                let title = titleMatch[2].replace(/<[^>]+>/g, '');
 
-                // Decode URL if needed (DDG sometimes wraps them)
+                // Decode URL
                 if (url.startsWith('/l/?kh=-1&uddg=')) {
-                    url = decodeURIComponent(url.split('uddg=')[1].split('&')[0]);
+                    try {
+                        url = decodeURIComponent(url.split('uddg=')[1].split('&')[0]);
+                    } catch (e) {
+                        // Keep original if decode fails
+                    }
                 }
 
-                // Try to find snippet (simple approximation)
-                let snippet = "No description available";
-                // In a real DOM parser this is easier, but regex is lighter for now
+                // Extract Snippet
+                const snippetMatch = block.match(/<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>(.*?)<\/a>/);
+                let snippet = snippetMatch ? snippetMatch[1].replace(/<[^>]+>/g, '') : "No description available";
 
                 results.push({
                     title: title,

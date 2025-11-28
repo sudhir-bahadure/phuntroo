@@ -80,7 +80,7 @@ function App() {
                 console.log('✅ Phuntroo is ready as your friend!');
             } catch (error) {
                 console.error('Failed to initialize friend:', error);
-                setStatus('Had trouble waking up 😴');
+                setStatus(`Had trouble waking up 😴 (${error.message})`);
             }
         };
 

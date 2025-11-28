@@ -41,7 +41,12 @@ class MemorySync {
     loadLocal() {
         const stored = localStorage.getItem('phuntroo_memory');
         if (stored) {
-            return JSON.parse(stored);
+            try {
+                return JSON.parse(stored);
+            } catch (e) {
+                console.warn('Memory corrupted, resetting:', e);
+                localStorage.removeItem('phuntroo_memory');
+            }
         }
 
         // Default memory structure
