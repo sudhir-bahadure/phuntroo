@@ -1,10 +1,11 @@
-// Multi-AI Service with Personality Engine
-// Intelligent routing between Groq, Together AI, and Hugging Face
+// Browser-based AI Service using WebLLM
+// Zero API costs - all AI runs in the browser using WebGPU
 
 import { webSearchSkill } from '../skills/WebSearchSkill';
-import { aiOrchestrator } from '../ai/AIOrchestrator';
+import { webLLMService } from './WebLLMService';
 import { personalityEngine } from '../ai/PersonalityEngine';
 import { behaviorEngine } from '../ai/BehaviorEngine';
+import { relationshipMemory } from '../memory/RelationshipMemory';
 
 class CloudLlamaService {
     constructor() {
@@ -14,29 +15,29 @@ class CloudLlamaService {
     }
 
     async initialize(onProgress) {
-        console.log('🤖 Multi-AI system ready!');
-        if (onProgress) {
-            onProgress({ progress: 1.0, text: 'AI ready!' });
+        console.log('🤖 Initializing browser-based AI...');
+
+        // Initialize WebLLM
+        const success = await webLLMService.initialize(onProgress);
+
+        if (success) {
+            console.log('✅ Browser AI ready!');
+            // Initialize relationship memory
+            await relationshipMemory.initialize();
         }
-        return true;
+
+        return success;
     }
 
     isReady() {
-        return true;
+        return webLLMService.isReady();
     }
 
     /**
-     * Set API keys for AI providers
-     */
-    setApiKeys(keys) {
-        aiOrchestrator.setApiKeys(keys);
-    }
-
-    /**
-     * Get AI provider status
+     * Get AI status
      */
     getStatus() {
-        return aiOrchestrator.getStatus();
+        return webLLMService.getStatus();
     }
 
     async generateResponse(messages, context = {}) {
@@ -58,46 +59,36 @@ class CloudLlamaService {
                 }
             }
 
-            // Get AI-driven system prompt from PersonalityEngine
-            const systemPrompt = await personalityEngine.getSystemPrompt({
+            // Get relationship context
+            const relationshipContext = relationshipMemory.getConversationContext();
+
+            // Build context for WebLLM
+            const aiContext = {
                 userPrefs: context.userPrefs,
                 emotion: context.emotion,
                 outfit: context.outfit,
-                recentActivity: searchContext
-            });
-
-            formattedMessages.push({ role: "system", content: systemPrompt });
+                relationship: relationshipContext,
+                searchContext: searchContext
+            };
 
             // Add conversation history (last 10 messages for context)
             if (Array.isArray(messages)) {
                 const recentMessages = messages.slice(-10);
-                recentMessages.forEach(msg => {
-                    if (msg.role !== 'system') {
-                        formattedMessages.push({
-                            role: msg.role,
-                            content: msg.content
-                        });
-
-                        // Track in personality engine
-                        personalityEngine.addToContext(msg.role, msg.content);
-                    }
-                });
+                formattedMessages = recentMessages.map(msg => ({
+                    role: msg.role,
+                    content: msg.content || msg.text || ''
+                }));
             } else {
-                formattedMessages.push({ role: "user", content: messages });
-                personalityEngine.addToContext('user', messages);
+                formattedMessages = [{ role: "user", content: messages }];
             }
 
             // Analyze user mood
             const userMood = personalityEngine.analyzeUserMood(lastUserMsg);
 
-            // Generate response using AI Orchestrator (multi-provider fallback)
-            const response = await aiOrchestrator.generateResponse(formattedMessages, {
-                temperature: 0.8,
-                maxTokens: 512,
-                topP: 0.9
-            });
+            // Generate response using WebLLM (browser-based)
+            const response = await webLLMService.generateResponse(formattedMessages, aiContext);
 
-            const aiResponse = response.content;
+            const aiResponse = response.response;
 
             // Update personality mood
             personalityEngine.updateMood(userMood, aiResponse);
@@ -106,23 +97,16 @@ class CloudLlamaService {
             const emotionalState = personalityEngine.getEmotionalState();
 
             // Update expression based on emotion
-            this.currentExpression = behaviorEngine.updateExpression(emotionalState.mood);
+            this.currentExpression = response.expression || behaviorEngine.updateExpression(emotionalState.mood);
 
             // Suggest gesture based on response content
-            const suggestedGesture = behaviorEngine.suggestGesture(aiResponse, emotionalState.mood);
+            const suggestedGesture = response.gesture || behaviorEngine.suggestGesture(aiResponse, emotionalState.mood);
             behaviorEngine.queueGesture(suggestedGesture);
             this.currentGesture = suggestedGesture;
 
-            // Track conversation for personality evolution
-            personalityEngine.addToContext('assistant', aiResponse);
-
-            // Evolve personality based on conversation (every 5 messages)
-            if (personalityEngine.getContext().length >= 10) {
-                const conversationSummary = personalityEngine.getContext()
-                    .map(m => m.content)
-                    .join(' ');
-                await personalityEngine.evolvePersonality(conversationSummary);
-            }
+            // Update relationship memory
+            await relationshipMemory.addConversation(lastUserMsg, aiResponse, emotionalState.mood);
+            await relationshipMemory.save();
 
             console.log(`✨ Response from ${response.provider} | Mood: ${emotionalState.mood} | Gesture: ${suggestedGesture}`);
 
@@ -139,7 +123,7 @@ class CloudLlamaService {
 
             // Fallback response
             return {
-                response: "I'm having trouble thinking right now 😅 Can you try again?",
+                response: "I'm having trouble thinking right now 😅 My brain might still be loading. Can you try again?",
                 provider: 'fallback',
                 expression: 'neutral',
                 gesture: null,

@@ -11,7 +11,6 @@ import { getSmartOutfit } from './services/OutfitService';
 import { visionService } from './services/vision/VisionService';
 import { autonomousBrain } from './services/brain/AutonomousBrain';
 import BrainMonitor from './components/BrainMonitor';
-import APIKeySettings from './components/APIKeySettings';
 import AvatarAnalysisPanel from './components/AvatarAnalysisPanel';
 import './App.css';
 
@@ -34,7 +33,7 @@ function App() {
     // Model State
     const [modelReady, setModelReady] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
-    const [showAPISettings, setShowAPISettings] = useState(false);
+    const [loadingStage, setLoadingStage] = useState('Initializing...');
 
     // Initialize Friend Memory & AI
     useEffect(() => {
@@ -54,10 +53,11 @@ function App() {
                 };
                 setMessages([greeting]);
 
-                // Initialize AI brain
-                setStatus('Connecting to cloud AI...');
+                // Initialize AI brain (WebLLM - browser-based)
+                setStatus('Loading AI brain in browser...');
                 await llamaService.initialize((progress) => {
                     setLoadingProgress(progress.progress * 100);
+                    setLoadingStage(progress.stage || progress.text || 'Loading...');
                 });
 
                 // Initialize voice services in background
