@@ -40,8 +40,18 @@ class AutonomousBrain {
             });
         }
 
-        // Goal 2: Learn new skills
-        if (state.opportunities.includes('learn_skill') && isReady('learn_skill')) {
+        // Goal 2: Learn new skills (User Requested vs Autonomous)
+        const userRequest = this.detectUserLearningRequest(state.recentMessages);
+
+        if (userRequest && isReady('learn_skill')) {
+            goals.push({
+                type: 'learn_skill',
+                priority: 10, // Highest priority for user requests
+                description: `Learn about ${userRequest}`,
+                topic: userRequest,
+                actions: ['research_skill', 'implement_skill']
+            });
+        } else if (state.opportunities.includes('learn_skill') && isReady('learn_skill')) {
             goals.push({
                 type: 'learn_skill',
                 priority: 7,
@@ -103,7 +113,7 @@ class AutonomousBrain {
                     break;
 
                 case 'learn_skill':
-                    decision.outcome = await this.learnNewSkill();
+                    decision.outcome = await this.learnNewSkill(goal.topic);
                     break;
 
                 case 'optimize':
@@ -130,41 +140,6 @@ class AutonomousBrain {
             console.log(`⚠️ Goal failed: ${goal.type}. Pausing this goal type for 5 mins.`);
             this.goalCooldowns[goal.type] = Date.now() + 300000;
         }
-
-        this.decisionLog.push(decision);
-
-        // Keep only last 100 decisions
-        if (this.decisionLog.length > 100) {
-            this.decisionLog = this.decisionLog.slice(-100);
-        }
-    }
-
-    /**
-    async learnNewSkill() {
-        console.log('📚 Autonomously learning new skill...');
-
-        // Search for trending AI capabilities
-        const results = await webSearchSkill.search('new AI chatbot capabilities 2024', 3);
-
-        if (results.length > 0) {
-            const summary = results.map(r => r.snippet).join(' ');
-
-            await memoryService.storeMemory('learned_skills', {
-                timestamp: new Date().toISOString(),
-                source: 'autonomous_research',
-                content: summary
-            });
-
-            return `Researched new capabilities: ${summary.substring(0, 100)}...`;
-        }
-
-        return 'No new skills discovered';
-    }
-
-    /**
-     * AUTONOMOUS ACTION: Optimize system
-     */
-    async optimizeSystem() {
         console.log('⚡ Autonomously optimizing system...');
 
         // Analyze performance metrics
