@@ -18,7 +18,27 @@ class AutonomousBrain {
         this.goalCooldowns = {}; // Track failed goals to avoid loops
     }
 
-    // ... (start/stop methods unchanged)
+    async start() {
+        console.log('🧠 Autonomous Brain activated');
+        this.isActive = true;
+
+        // Think every 30 seconds
+        this.thinkingInterval = setInterval(async () => {
+            await this.think();
+        }, 30000);
+
+        // Initial thought
+        await this.think();
+    }
+
+    stop() {
+        if (this.thinkingInterval) {
+            clearInterval(this.thinkingInterval);
+            this.thinkingInterval = null;
+        }
+        this.isActive = false;
+        console.log('🧠 Autonomous Brain deactivated');
+    }
 
     /**
      * Generate goals based on current state
