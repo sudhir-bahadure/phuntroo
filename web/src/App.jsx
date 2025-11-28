@@ -12,6 +12,7 @@ import { visionService } from './services/vision/VisionService';
 import { autonomousBrain } from './services/brain/AutonomousBrain';
 import BrainMonitor from './components/BrainMonitor';
 import APIKeySettings from './components/APIKeySettings';
+import AvatarAnalysisPanel from './components/AvatarAnalysisPanel';
 import './App.css';
 
 function App() {
@@ -404,6 +405,9 @@ function App() {
             {showAPISettings && (
                 <APIKeySettings onClose={() => setShowAPISettings(false)} />
             )}
+
+            {/* Avatar Analysis Panel */}
+            <AvatarAnalysisPanel vrmModel={null} />
         </div>
     );
 }

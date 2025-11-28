@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three-stdlib';
 // import { useVRMAnimations } from '../../hooks/useVRMAnimations';
 import { movementController } from '../../utils/MovementController';
 import { skeletonController } from '../../utils/SkeletonController';
+import { proceduralMotionEngine } from '../../services/motion/ProceduralMotionEngine';
 // import { autonomyManager } from '../../services/autonomy/AutonomyManager';
 
 const VISEME_NAMES = ["aa", "ih", "ou", "ee", "oh", "sil"];
@@ -185,6 +186,12 @@ export const VRMAvatar = ({ visemeIndex, avatarState, url }) => {
                     rightHand.rotation.z = -Math.sin(t * 2.0) * 0.1;
                 }
             }
+
+            // ==== PROCEDURAL MOTION ENGINE ====
+            // Apply natural variation to all movements (Nexa-inspired)
+            proceduralMotionEngine.update(delta, window.micLevel || 0);
+            proceduralMotionEngine.setMousePosition(pointer.current.x, pointer.current.y);
+            proceduralMotionEngine.applyProceduralMotion(humanoid, avatarState);
         }
 
         // ==== AUTONOMOUS GAZE & HEAD TRACKING ====
