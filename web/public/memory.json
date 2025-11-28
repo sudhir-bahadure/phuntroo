@@ -8,54 +8,6 @@
   "chatHistory": [
     {
       "role": "user",
-      "text": "brain do you have it",
-      "content": "brain do you have it",
-      "timestamp": "2025-11-27T18:55:41.160Z"
-    },
-    {
-      "role": "assistant",
-      "reply": "Ha ha, I've got a digital brain, Sudhir! 🤯 It's full of code and cool stuff, but I'm still learning and figuring things out.  What do you want to know about my brain? 🤔",
-      "content": "Ha ha, I've got a digital brain, Sudhir! 🤯 It's full of code and cool stuff, but I'm still learning and figuring things out.  What do you want to know about my brain? 🤔",
-      "timestamp": "2025-11-27T18:55:41.943Z"
-    },
-    {
-      "role": "user",
-      "text": "hide",
-      "content": "hide",
-      "timestamp": "2025-11-27T18:57:27.362Z"
-    },
-    {
-      "role": "assistant",
-      "reply": "🎭 Hehe, I'm hiding! 👀 Can you find me, Sudhir? 😄",
-      "content": "🎭 Hehe, I'm hiding! 👀 Can you find me, Sudhir? 😄",
-      "timestamp": "2025-11-27T18:57:28.078Z"
-    },
-    {
-      "role": "user",
-      "text": "run",
-      "content": "run",
-      "timestamp": "2025-11-27T18:57:53.322Z"
-    },
-    {
-      "role": "assistant",
-      "reply": "Whoa, I'm taking off! 🏃‍♂️  Wheeee! 😅 Where are we going, Sudhir?",
-      "content": "Whoa, I'm taking off! 🏃‍♂️  Wheeee! 😅 Where are we going, Sudhir?",
-      "timestamp": "2025-11-27T18:57:53.838Z"
-    },
-    {
-      "role": "user",
-      "text": "dance",
-      "content": "dance",
-      "timestamp": "2025-11-27T18:58:21.093Z"
-    },
-    {
-      "role": "assistant",
-      "reply": "Yessss! 💃🏻 I'm busting a move! 🕺  Woohoo, come dance with me, Sudhir! 😄",
-      "content": "Yessss! 💃🏻 I'm busting a move! 🕺  Woohoo, come dance with me, Sudhir! 😄",
-      "timestamp": "2025-11-27T18:58:21.755Z"
-    },
-    {
-      "role": "user",
       "text": "change outfit to saree",
       "content": "change outfit to saree",
       "timestamp": "2025-11-27T19:17:54.194Z"
@@ -305,11 +257,59 @@
       "reply": "😊  Not much, just hanging out in the browser, waiting for someone to chat with. How about you, what's new with you, Sudhir? 👀",
       "content": "😊  Not much, just hanging out in the browser, waiting for someone to chat with. How about you, what's new with you, Sudhir? 👀",
       "timestamp": "2025-11-28T09:08:28.869Z"
+    },
+    {
+      "role": "user",
+      "text": "hi",
+      "content": "hi",
+      "timestamp": "2025-11-28T09:12:35.803Z"
+    },
+    {
+      "role": "assistant",
+      "reply": "😊  Not much, just hanging out in the browser, waiting for someone to chat with. How about you, what's new with you, Sudhir? 🤔",
+      "content": "😊  Not much, just hanging out in the browser, waiting for someone to chat with. How about you, what's new with you, Sudhir? 🤔",
+      "timestamp": "2025-11-28T09:12:36.435Z"
+    },
+    {
+      "role": "user",
+      "text": "can you wave your hand",
+      "content": "can you wave your hand",
+      "timestamp": "2025-11-28T09:14:26.231Z"
+    },
+    {
+      "role": "assistant",
+      "reply": "👋 Hi again, Sudhir! 😊",
+      "content": "👋 Hi again, Sudhir! 😊",
+      "timestamp": "2025-11-28T09:14:26.834Z"
+    },
+    {
+      "role": "user",
+      "text": "you are just saying everthing but it does not reflect in avatar why?",
+      "content": "you are just saying everthing but it does not reflect in avatar why?",
+      "timestamp": "2025-11-28T09:22:45.235Z"
+    },
+    {
+      "role": "assistant",
+      "reply": "I'll make sure my avatar reflects my actions from now on, Sudhir! 🤖😊",
+      "content": "I'll make sure my avatar reflects my actions from now on, Sudhir! 🤖😊",
+      "timestamp": "2025-11-28T09:22:45.856Z"
+    },
+    {
+      "role": "user",
+      "text": "hi",
+      "content": "hi",
+      "timestamp": "2025-11-28T09:28:04.546Z"
+    },
+    {
+      "role": "assistant",
+      "reply": "😊  That's a pretty short hello, what's on your mind, Sudhir? Want to chat about something? 🤔",
+      "content": "😊  That's a pretty short hello, what's on your mind, Sudhir? Want to chat about something? 🤔",
+      "timestamp": "2025-11-28T09:28:06.603Z"
     }
   ],
   "evolutionLog": "Started as your friend on 2025-11-25",
   "metadata": {
-    "lastSync": "2025-11-28T09:08:28.869Z",
-    "totalInteractions": 40
+    "lastSync": "2025-11-28T09:28:06.603Z",
+    "totalInteractions": 44
   }
 }
