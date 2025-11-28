@@ -4,6 +4,7 @@
  */
 
 import { charToViseme } from '../../utils/visemeMapping';
+import { visemeMapper } from '../animation/VisemeMapper';
 
 class TTSService {
     constructor() {
@@ -11,6 +12,8 @@ class TTSService {
         this.voice = null;
         this.isReady = false;
         this.visemeQueue = []; // Shared queue for avatar
+        this.currentVisemes = []; // Enhanced viseme sequence
+        this.speechStartTime = 0;
     }
 
     async initialize() {
@@ -103,6 +106,13 @@ class TTSService {
                 utterance.rate = options.rate || 1.0;
                 utterance.pitch = options.pitch || 1.1;
                 utterance.volume = options.volume || 1.0;
+
+                // Generate enhanced visemes for lip-sync
+                const estimatedDuration = text.split(' ').length * 0.4; // ~0.4s per word
+                this.currentVisemes = visemeMapper.textToVisemes(text, estimatedDuration);
+                this.speechStartTime = Date.now();
+
+                console.log(`🎤 Generated ${this.currentVisemes.length} visemes for speech`);
 
                 // Event handlers
                 utterance.onend = () => {
