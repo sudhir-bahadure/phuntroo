@@ -11,6 +11,7 @@ import { getSmartOutfit } from './services/OutfitService';
 import { visionService } from './services/vision/VisionService';
 import { autonomousBrain } from './services/brain/AutonomousBrain';
 import BrainMonitor from './components/BrainMonitor';
+import APIKeySettings from './components/APIKeySettings';
 import './App.css';
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
     // Model State
     const [modelReady, setModelReady] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
+    const [showAPISettings, setShowAPISettings] = useState(false);
 
     // Initialize Friend Memory & AI
     useEffect(() => {
@@ -131,22 +133,40 @@ function App() {
                 image: isSeeing ? visionService.captureImage() : null // Capture image if seeing
             } : {};
 
-            // Generate friend response
+            // Generate friend response (now returns object with gesture/expression)
             // Pass full message history for better context
-            const rawResponse = await llamaService.generateResponse([...messages, userMessage], context);
+            const aiResult = await llamaService.generateResponse([...messages, userMessage], context);
 
-            // Parse actions from response (e.g. [action: wave])
-            let aiResponse = rawResponse;
-            const actionMatch = rawResponse.match(/\[(action|expression): ([^\]]+)\]/);
+            // Extract response (handle both old string format and new object format)
+            let aiResponse = typeof aiResult === 'string' ? aiResult : aiResult.response;
+
+            // Apply AI-suggested expression and gesture
+            if (typeof aiResult === 'object') {
+                if (aiResult.expression) {
+                    setCurrentEmotion(aiResult.expression);
+                    console.log(`😊 AI Expression: ${aiResult.expression}`);
+                }
+                if (aiResult.gesture) {
+                    // Trigger gesture animation
+                    autonomyManager.setGesture(aiResult.gesture);
+                    console.log(`👋 AI Gesture: ${aiResult.gesture}`);
+                }
+                if (aiResult.provider) {
+                    console.log(`🤖 Provider: ${aiResult.provider}`);
+                }
+            }
+
+            // Parse legacy action tags (for backward compatibility)
+            const actionMatch = aiResponse.match(/\[(action|expression): ([^\]]+)\]/);
 
             if (actionMatch) {
                 const type = actionMatch[1];
                 const value = actionMatch[2];
 
                 // Remove tag from spoken text
-                aiResponse = rawResponse.replace(/\[(action|expression): [^\]]+\]/g, '').trim();
+                aiResponse = aiResponse.replace(/\[(action|expression): [^\]]+\]/g, '').trim();
 
-                console.log(`🤖 AI Action: ${type} -> ${value}`);
+                console.log(`🤖 Legacy Action: ${type} -> ${value}`);
 
                 if (type === 'action') {
                     // Map common actions to gestures
@@ -354,6 +374,36 @@ function App() {
                 </p>
             </footer>
             <BrainMonitor />
+
+            {/* API Settings Button */}
+            <button
+                onClick={() => setShowAPISettings(true)}
+                title="Configure AI Providers"
+                style={{
+                    position: 'fixed',
+                    bottom: '20px',
+                    left: '20px',
+                    background: 'linear-gradient(135deg, #4a9eff 0%, #3d7fd8 100%)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '50px',
+                    height: '50px',
+                    fontSize: '24px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(74, 158, 255, 0.4)',
+                    zIndex: 100,
+                    transition: 'transform 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
+                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+            >
+                🤖
+            </button>
+
+            {/* API Key Settings Modal */}
+            {showAPISettings && (
+                <APIKeySettings onClose={() => setShowAPISettings(false)} />
+            )}
         </div>
     );
 }

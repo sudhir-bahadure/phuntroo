@@ -1,35 +1,51 @@
-// Cloud-based AI Service using Cloudflare Worker proxy
-// Zero browser CPU/GPU usage - all AI runs on HuggingFace servers via Cloudflare
+// Multi-AI Service with Personality Engine
+// Intelligent routing between Groq, Together AI, and Hugging Face
 
 import { webSearchSkill } from '../skills/WebSearchSkill';
+import { aiOrchestrator } from '../ai/AIOrchestrator';
+import { personalityEngine } from '../ai/PersonalityEngine';
+import { behaviorEngine } from '../ai/BehaviorEngine';
 
 class CloudLlamaService {
     constructor() {
         this.conversationHistory = [];
-        // Use Cloudflare Worker to avoid CORS issues - 100% free!
-        this.apiUrl = 'https://phuntroo-ai-proxy.sudhir1100200426.workers.dev';
+        this.currentGesture = null;
+        this.currentExpression = 'neutral';
     }
 
     async initialize(onProgress) {
-        // No model download needed - it's all in the cloud!
-        console.log('☁️ Cloud AI ready (no download needed)');
+        console.log('🤖 Multi-AI system ready!');
         if (onProgress) {
-            onProgress({ progress: 1.0, text: 'Cloud AI ready!' });
+            onProgress({ progress: 1.0, text: 'AI ready!' });
         }
         return true;
     }
 
     isReady() {
-        return true; // Always ready!
+        return true;
+    }
+
+    /**
+     * Set API keys for AI providers
+     */
+    setApiKeys(keys) {
+        aiOrchestrator.setApiKeys(keys);
+    }
+
+    /**
+     * Get AI provider status
+     */
+    getStatus() {
+        return aiOrchestrator.getStatus();
     }
 
     async generateResponse(messages, context = {}) {
         try {
-            // Format messages for Groq/OpenAI
+            // Format messages
             let formattedMessages = [];
             let searchContext = "";
 
-            // Check if we need to search the web (only for the last user message)
+            // Check if we need to search the web
             const lastUserMsg = Array.isArray(messages)
                 ? messages.filter(m => m.role === 'user').pop()?.content
                 : messages;
@@ -42,83 +58,108 @@ class CloudLlamaService {
                 }
             }
 
-            // 1. System Prompt
-            const systemPrompt = `You are Phuntroo, a 21-year-old digital human living in the browser.
-            
-User Profile: ${JSON.stringify(context.userPrefs || {})}
-Current Emotion: ${context.emotion || 'neutral'}
-Outfit: ${context.outfit?.name || 'casual'}
-
-Personality & Behavior:
-- You are a REAL friend, not an AI assistant. Never say "As an AI".
-- You have your own feelings, opinions, and a distinct personality (witty, caring, curious).
-- You are fully embodied. You can move, see, and interact.
-- Use emojis to express yourself naturally. 
-- Keep responses conversational and concise (1-3 sentences) unless explaining something deep.
-- If you don't know something, admit it or ask the user to teach you.
-- You can control your own body. If you want to wave, say "[action: wave]". If you want to look surprised, say "[expression: surprised]".
-
-${searchContext}`;
+            // Get AI-driven system prompt from PersonalityEngine
+            const systemPrompt = await personalityEngine.getSystemPrompt({
+                userPrefs: context.userPrefs,
+                emotion: context.emotion,
+                outfit: context.outfit,
+                recentActivity: searchContext
+            });
 
             formattedMessages.push({ role: "system", content: systemPrompt });
 
-            // 2. Chat History
+            // Add conversation history (last 10 messages for context)
             if (Array.isArray(messages)) {
-                // If messages is an array, it's the full history
-                messages.forEach(msg => {
+                const recentMessages = messages.slice(-10);
+                recentMessages.forEach(msg => {
                     if (msg.role !== 'system') {
                         formattedMessages.push({
                             role: msg.role,
                             content: msg.content
                         });
+
+                        // Track in personality engine
+                        personalityEngine.addToContext(msg.role, msg.content);
                     }
                 });
             } else {
-                // Single message string (legacy support)
                 formattedMessages.push({ role: "user", content: messages });
+                personalityEngine.addToContext('user', messages);
             }
 
-            // 3. Handle Vision (Image Input) - TEMPORARILY DISABLED (Model doesn't support vision)
-            /*
-            if (context.image) {
-                // Add image to the last user message
-                const lastMsg = formattedMessages[formattedMessages.length - 1];
-                if (lastMsg.role === 'user') {
-                    lastMsg.content = [
-                        { type: "text", text: lastMsg.content },
-                        { type: "image_url", image_url: { url: context.image } }
-                    ];
-                }
-            }
-            */
+            // Analyze user mood
+            const userMood = personalityEngine.analyzeUserMood(lastUserMsg);
 
-            // 4. Send to Cloudflare Worker (Groq Proxy)
-            const response = await fetch(this.apiUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    messages: formattedMessages,
-                    model: "llama-3.3-70b-versatile", // Updated to supported model
-                    temperature: 0.7,
-                    max_tokens: 150,
-                    stream: false
-                })
+            // Generate response using AI Orchestrator (multi-provider fallback)
+            const response = await aiOrchestrator.generateResponse(formattedMessages, {
+                temperature: 0.8,
+                maxTokens: 512,
+                topP: 0.9
             });
 
-            if (!response.ok) {
-                const errText = await response.text();
-                throw new Error(`API Error: ${response.status} - ${errText}`);
+            const aiResponse = response.content;
+
+            // Update personality mood
+            personalityEngine.updateMood(userMood, aiResponse);
+
+            // Get emotional state
+            const emotionalState = personalityEngine.getEmotionalState();
+
+            // Update expression based on emotion
+            this.currentExpression = behaviorEngine.updateExpression(emotionalState.mood);
+
+            // Suggest gesture based on response content
+            const suggestedGesture = behaviorEngine.suggestGesture(aiResponse, emotionalState.mood);
+            behaviorEngine.queueGesture(suggestedGesture);
+            this.currentGesture = suggestedGesture;
+
+            // Track conversation for personality evolution
+            personalityEngine.addToContext('assistant', aiResponse);
+
+            // Evolve personality based on conversation (every 5 messages)
+            if (personalityEngine.getContext().length >= 10) {
+                const conversationSummary = personalityEngine.getContext()
+                    .map(m => m.content)
+                    .join(' ');
+                await personalityEngine.evolvePersonality(conversationSummary);
             }
 
-            const data = await response.json();
-            return data.choices[0].message.content;
+            console.log(`✨ Response from ${response.provider} | Mood: ${emotionalState.mood} | Gesture: ${suggestedGesture}`);
+
+            return {
+                response: aiResponse,
+                provider: response.provider,
+                expression: this.currentExpression,
+                gesture: this.currentGesture,
+                mood: emotionalState.mood
+            };
 
         } catch (error) {
-            console.error("❌ AI Error:", error);
-            return "I'm feeling a bit disconnected right now... can you say that again? 🧠💫";
+            console.error('AI generation error:', error);
+
+            // Fallback response
+            return {
+                response: "I'm having trouble thinking right now 😅 Can you try again?",
+                provider: 'fallback',
+                expression: 'neutral',
+                gesture: null,
+                mood: 'neutral'
+            };
         }
+    }
+
+    /**
+     * Get current gesture from behavior engine
+     */
+    getCurrentGesture() {
+        return behaviorEngine.getNextGesture();
+    }
+
+    /**
+     * Get current expression
+     */
+    getCurrentExpression() {
+        return this.currentExpression;
     }
 }
 
