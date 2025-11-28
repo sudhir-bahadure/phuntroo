@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phuntroo Avatar - Asian Female AI Assistant</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0a0e27 100%);
+      color: #e0e6ed;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    #app {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      height: 100vh;
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    #viewer-container {
+      position: relative;
+      background: radial-gradient(ellipse at center, #1a1f3a 0%, #0a0e27 100%);
+      border-radius: 1.5rem;
+      overflow: hidden;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    #avatar-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 14, 39, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      z-index: 10;
+      transition: opacity 0.5s ease;
+    }
+
+    #loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(99, 102, 241, 0.1);
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #loading-text {
+      font-size: 1.1rem;
+      color: #a5b4fc;
+      text-align: center;
+      max-width: 80%;
+    }
+
+    #progress-bar {
+      width: 300px;
+      height: 4px;
+      background: rgba(99, 102, 241, 0.2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    #progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    #controls-panel {
+      background: rgba(26, 31, 58, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .panel-section {
+      background: rgba(15, 20, 40, 0.6);
+      border-radius: 1rem;
+      padding: 1.25rem;
+      border: 1px solid rgba(99, 102, 241, 0.15);
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #818cf8;
+      margin-bottom: 1rem;
+    }
+
+    #status-text {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #c7d2fe;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .status-indicator.success {
+      background: #10b981;
+    }
+
+    .status-indicator.error {
+      background: #ef4444;
+    }
+
+    .status-indicator.loading {
+      background: #f59e0b;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    button {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    video {
+      width: 100%;
+      border-radius: 0.75rem;
+      background: #000;
+      margin-top: 0.75rem;
+    }
+
+    .info-text {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-top: 0.5rem;
+    }
+
+    #error-message {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      color: #fca5a5;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      display: none;
+    }
+
+    #error-message.show {
+      display: block;
+    }
+
+    .controls-hint {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      background: rgba(10, 14, 39, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.75rem;
+      font-size: 0.85rem;
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    @media (max-width: 1024px) {
+      #app {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+      }
+
+      #controls-panel {
+        max-height: 40vh;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div id="viewer-container">
+      <div id="avatar-canvas"></div>
+
+      <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div id="loading-text">Initializing 3D engine...</div>
+        <div id="progress-bar">
+          <div id="progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="controls-hint">
+        🖱️ Drag to rotate • 🔍 Scroll to zoom
+      </div>
+    </div>
+
+    <div id="controls-panel">
+      <div class="panel-section">
+        <div class="section-title">Status</div>
+        <div id="status-text">
+          <span class="status-indicator loading"></span>
+          Initializing...
+        </div>
+      </div>
+
+      <div id="error-message"></div>
+
+      <div class="panel-section">
+        <div class="section-title">Camera</div>
+        <button id="btn-camera">Enable Webcam</button>
+        <video id="webcam" autoplay playsinline muted style="display: none;"></video>
+        <div class="info-text">She can see you through your camera</div>
+      </div>
+
+      <div class="panel-section">
+        const statusText = document.getElementById('status-text');
+        const errorMessage = document.getElementById('error-message');
+        const webcam = document.getElementById('webcam');
+        const btnCamera = document.getElementById('btn-camera');
+        const btnMic = document.getElementById('btn-mic');
+        const speechStatus = document.getElementById('speech-status');
+
+        // Utility functions
+        function setStatus(message, type = 'loading') {
+        const indicator = statusText.querySelector('.status-indicator');
+        indicator.className = `status-indicator ${type}`;
+        statusText.innerHTML = `<span class="status-indicator ${type}"></span>${message}`;
+        console.log(`[Status] ${message}`);
+        }
+
+        function setLoading(message, progress = null) {
+        loadingText.textContent = message;
+        if (progress !== null) {
+        progressFill.style.width = `${progress}%`;
+        }
+        }
+
+        function showError(message) {
+        errorMessage.textContent = `⚠️ ${message}`;
+        errorMessage.classList.add('show');
+        setStatus(message, 'error');
+        console.error(`[Error] ${message}`);
+        }
+
+        function hideLoading() {
+        loadingOverlay.classList.add('hidden');
+        }
+
+        // Fallback for Three.js loading
+        function loadThreeFallback() {
+        console.warn('Primary CDN failed, trying fallback...');
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/three@0.160.1/build/three.min.js';
+        script.onerror = () => {
+        showError('Failed to load Three.js from all CDNs. Please check your internet connection.');
+        };
+        document.head.appendChild(script);
+        }
+
+        // Initialize 3D scene
+        function init3D() {
+        try {
+        setLoading('Creating 3D scene...', 10);
+
+        const container = document.getElementById('avatar-canvas');
+
+        // Scene
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0e27);
+        scene.fog = new THREE.Fog(0x0a0e27, 5, 15);
+
+        // Camera
+        camera = new THREE.PerspectiveCamera(
+        45,
+        container.clientWidth / container.clientHeight,
+        0.1,
+        100
+        );
+        camera.position.set(0, 1.65, 2.5);
+
+        // Renderer
+        renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        container.appendChild(renderer.domElement);
+
+        setLoading('Adding lights...', 20);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        keyLight.position.set(2, 3, 3);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 2048;
+        keyLight.shadow.mapSize.height = 2048;
+        keyLight.shadow.camera.near = 0.1;
+        keyLight.shadow.camera.far = 10;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0x8b9dc3, 0.4);
+        fillLight.position.set(-2, 1, -1);
+        scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight(0x6366f1, 0.3);
+        rimLight.position.set(0, 2, -2);
+        scene.add(rimLight);
+
+        // Ground
+        const groundGeometry = new THREE.CircleGeometry(5, 64);
+        const groundMaterial = new THREE.MeshStandardMaterial({
+        color: 0x1a1f3a,
+        roughness: 0.8,
+        metalness: 0.2
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        setLoading('Setting up controls...', 30);
+
+        // Controls (will load after Three.js examples)
+        loadOrbitControls();
+
+        // Handle window resize
+        window.addEventListener('resize', onWindowResize);
+
+        setStatus('3D scene ready', 'success');
+        setLoading('Loading avatar model...', 40);
+
+        // Load avatar
+        loadAvatar();
+
+        } catch (error) {
+        showError(`Failed to initialize 3D scene: ${error.message}`);
+        console.error(error);
+        }
+        }
+
+        // Load OrbitControls
+        function loadOrbitControls() {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/js/controls/OrbitControls.js';
+        script.onload = () => {
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 1.4, 0);
+        controls.enablePan = false;
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 1.5;
+        controls.maxDistance = 4;
+        controls.maxPolarAngle = Math.PI / 1.8;
+        console.log('[Controls] OrbitControls loaded');
+        };
+        script.onerror = () => {
+        console.warn('[Controls] Failed to load OrbitControls, using basic camera');
+        };
+        document.head.appendChild(script);
+        }
+
+        // Load avatar
+        function loadAvatar() {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/js/loaders/GLTFLoader.js';
+        script.onload = () => {
+        const loader = new THREE.GLTFLoader();
+
+        loader.load(
+        './avatars/avatar.glb',
+        (gltf) => onAvatarLoaded(gltf),
+        (progress) => onAvatarProgress(progress),
+        (error) => onAvatarError(error)
+        );
+        };
+        script.onerror = () => {
+        showError('Failed to load GLTF loader');
+        };
+        document.head.appendChild(script);
+        }
+
+        function onAvatarProgress(xhr) {
+        if (xhr.lengthComputable) {
+        const percentComplete = (xhr.loaded / xhr.total) * 100;
+        const progress = 40 + (percentComplete * 0.5); // 40-90%
+        setLoading(`Loading avatar... ${Math.round(percentComplete)}%`, progress);
+        }
+        }
+
+        function onAvatarLoaded(gltf) {
+        try {
+        setLoading('Processing avatar...', 90);
+
+        avatar = gltf.scene;
+
+        // Enable shadows
+        avatar.traverse((node) => {
+        if (node.isMesh) {
+        node.castShadow = true;
+        node.receiveShadow = true;
+        }
+        });
+
+        // Position and rotation
+        avatar.position.set(0, 0, 0);
+        avatar.rotation.y = Math.PI; // Face camera
+
+        scene.add(avatar);
+
+        // Setup animations
+        if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(avatar);
+        const action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+        console.log(`[Avatar] Playing animation: ${gltf.animations[0].name}`);
+        }
+
+        setLoading('Avatar ready!', 100);
+        setTimeout(() => {
+        hideLoading();
+        setStatus('✨ Avatar loaded successfully! She\'s ready to interact.', 'success');
+        isInitialized = true;
+        animate();
+        }, 500);
+
+        } catch (error) {
+        showError(`Failed to process avatar: ${error.message}`);
+        console.error(error);
+        }
+        }
+
+        function onAvatarError(error) {
+        showError('Failed to load avatar model. Please check if avatar.glb exists.');
+        console.error('[Avatar Error]', error);
+        }
+
+        // Animation loop
+        function animate() {
+        if (!isInitialized) return;
+
+        requestAnimationFrame(animate);
+
+        const delta = clock.getDelta();
+
+        // Update mixer
+        if (mixer) {
+        mixer.update(delta);
+        }
+
+        // Subtle idle animation
+        if (avatar) {
+        const time = clock.getElapsedTime();
+        avatar.position.y = Math.sin(time * 1.5) * 0.02; // Breathing
+        avatar.position.x = Math.sin(time * 0.5) * 0.05; // Slight sway
+        }
+
+        // Update controls
+        if (controls) {
+        controls.update();
+        }
+
+        renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+        const container = document.getElementById('avatar-canvas');
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Webcam functionality
+        btnCamera.addEventListener('click', async () => {
+        try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        webcam.srcObject = stream;
+        webcam.style.display = 'block';
+        btnCamera.textContent = '✅ Camera Active';
+        btnCamera.disabled = true;
+        setStatus('Camera enabled - she can see you!', 'success');
+        } catch (error) {
+        showError('Camera access denied or not available');
+        console.error('[Camera]', error);
+        }
+        });
+
+        // Speech functionality
+        let recognition;
+        let isListening = false;
+
+        function initSpeech() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        btnMic.disabled = true;
+        btnMic.textContent = '❌ Speech Not Supported';
+        return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-IN'; // Indian English
+
+        recognition.onstart = () => {
+        isListening = true;
+        btnMic.textContent = '🔴 Listening...';
+        btnMic.classList.add('recording');
+        speechStatus.textContent = 'Speak now...';
+        };
+
+        recognition.onend = () => {
+        isListening = false;
+        btnMic.textContent = '🎤 Talk to Her';
+        btnMic.classList.remove('recording');
+        if (speechStatus.textContent === 'Speak now...') {
+        speechStatus.textContent = 'Click to start voice conversation';
+        }
+        };
+
+        recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        console.log(`[Speech] Heard: ${transcript}`);
+        speechStatus.textContent = `You: "${transcript}"`;
+        processSpeech(transcript);
+        };
+
+        recognition.onerror = (event) => {
+        console.error('[Speech Error]', event.error);
+        speechStatus.textContent = `Error: ${event.error}`;
+        isListening = false;
+        btnMic.textContent = '🎤 Talk to Her';
+        };
+
+        btnMic.addEventListener('click', () => {
+        if (isListening) {
+        recognition.stop();
+        } else {
+        recognition.start();
+        }
+        });
+        }
+
+        function processSpeech(text) {
+        const lower = text.toLowerCase();
+        let response = "I'm listening.";
+
+        // Simple rule-based AI
+        if (lower.includes('hello') || lower.includes('hi')) {
+        response = "Hello! I am your Phuntroo avatar. It's nice to meet you.";
+        } else if (lower.includes('who are you')) {
+        response = "I am a realistic 3D avatar running entirely in your browser.";
+        } else if (lower.includes('how are you')) {
+        response = "I'm functioning perfectly, thank you for asking!";
+        } else if (lower.includes('name')) {
+        response = "My name is Phuntroo.";
+        } else if (lower.includes('can you see me')) {
+        response = "If you enable the camera, I can see you through the webcam feed.";
+        } else {
+        response = `You said: ${text}. I understand.`;
+        }
+
+        speak(response);
+        }
+
+        function speak(text) {
+        if (!('speechSynthesis' in window)) return;
+
+        // Cancel any current speech
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-IN'; // Indian English
+        utterance.pitch = 1.1; // Slightly higher pitch
+        utterance.rate = 1.0; // Normal speed
+
+        // Try to find a female voice
+        const voices = window.speechSynthesis.getVoices();
+        const femaleVoice = voices.find(v =>
+        (v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google')) &&
+        v.lang.includes('en')
+        );
+        if (femaleVoice) utterance.voice = femaleVoice;
+
+        utterance.onstart = () => {
+        speechStatus.textContent = `Her: "${text}"`;
+        // Simple lip sync simulation (random mouth movement)
+        if (avatar) startLipSync();
+        };
+
+        utterance.onend = () => {
+        stopLipSync();
+        };
+
+        window.speechSynthesis.speak(utterance);
+        }
+
+        let lipSyncInterval;
+        function startLipSync() {
+        if (!avatar) return;
+        // Find head/jaw bone if possible, otherwise just bob head
+        lipSyncInterval = setInterval(() => {
+        avatar.position.y = (Math.random() * 0.02) + 0.01;
+        }, 100);
+        }
+
+        function stopLipSync() {
+        clearInterval(lipSyncInterval);
+        if (avatar) avatar.position.y = 0;
+        }
+
+        // Initialize when Three.js is loaded
+        function checkThreeLoaded() {
+        if (typeof THREE !== 'undefined') {
+        console.log('[Init] Three.js loaded successfully');
+        setLoading('Three.js loaded', 5);
+        init3D();
+        } else {
+        setTimeout(checkThreeLoaded, 100);
+        }
+        }
+
+        // Start initialization
+        window.addEventListener('load', () => {
+        console.log('[Init] Starting avatar system...');
+        checkThreeLoaded();
+        initSpeech();
+        });
+
+        // Error handling
+        window.addEventListener('error', (event) => {
+        console.error('[Global Error]', event.error);
+        });
+        </script>
+</body>
+
+</html>
