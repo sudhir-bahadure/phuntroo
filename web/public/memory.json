@@ -8,18 +8,6 @@
   "chatHistory": [
     {
       "role": "user",
-      "text": "change outfit to saree",
-      "content": "change outfit to saree",
-      "timestamp": "2025-11-27T19:17:54.194Z"
-    },
-    {
-      "role": "assistant",
-      "reply": "🛍️ Ah, I feel so elegant now! 👗  How do I look, Sudhir? 😊",
-      "content": "🛍️ Ah, I feel so elegant now! 👗  How do I look, Sudhir? 😊",
-      "timestamp": "2025-11-27T19:17:54.876Z"
-    },
-    {
-      "role": "user",
       "text": "hi",
       "content": "hi",
       "timestamp": "2025-11-27T19:47:13.573Z"
@@ -305,11 +293,23 @@
       "reply": "😊  That's a pretty short hello, what's on your mind, Sudhir? Want to chat about something? 🤔",
       "content": "😊  That's a pretty short hello, what's on your mind, Sudhir? Want to chat about something? 🤔",
       "timestamp": "2025-11-28T09:28:06.603Z"
+    },
+    {
+      "role": "user",
+      "text": "can you wave your hand",
+      "content": "can you wave your hand",
+      "timestamp": "2025-11-28T09:28:15.844Z"
+    },
+    {
+      "role": "assistant",
+      "reply": "👋 Hi again, Sudhir! 😊",
+      "content": "👋 Hi again, Sudhir! 😊",
+      "timestamp": "2025-11-28T09:28:16.736Z"
     }
   ],
   "evolutionLog": "Started as your friend on 2025-11-25",
   "metadata": {
-    "lastSync": "2025-11-28T09:28:06.603Z",
-    "totalInteractions": 44
+    "lastSync": "2025-11-28T09:28:16.736Z",
+    "totalInteractions": 45
   }
 }
