@@ -1,8 +1,9 @@
 // Browser-based AI Service using WebLLM
-// Zero API costs - all AI runs in the browser using WebGPU
+// Falls back to Hugging Face API if WebGPU is not available
 
 import { webSearchSkill } from '../skills/WebSearchSkill';
 import { webLLMService } from './WebLLMService';
+import { huggingFaceFallback } from './HuggingFaceFallback';
 import { personalityEngine } from '../ai/PersonalityEngine';
 import { behaviorEngine } from '../ai/BehaviorEngine';
 import { relationshipMemory } from '../memory/RelationshipMemory';
@@ -12,32 +13,59 @@ class CloudLlamaService {
         this.conversationHistory = [];
         this.currentGesture = null;
         this.currentExpression = 'neutral';
+        this.useWebLLM = false;
+        this.useFallback = false;
     }
 
     async initialize(onProgress) {
         console.log('🤖 Initializing browser-based AI...');
 
-        // Initialize WebLLM
-        const success = await webLLMService.initialize(onProgress);
+        // Try WebLLM first
+        const webLLMSuccess = await webLLMService.initialize(onProgress);
 
-        if (success) {
-            console.log('✅ Browser AI ready!');
-            // Initialize relationship memory
-            await relationshipMemory.initialize();
+        if (webLLMSuccess) {
+            console.log('✅ WebLLM ready!');
+            this.useWebLLM = true;
+        } else {
+            console.log('⚠️ WebLLM not available, using Hugging Face fallback');
+            this.useFallback = true;
+
+            if (onProgress) {
+                onProgress({
+                    progress: 1.0,
+                    text: 'Using cloud AI fallback (free)',
+                    stage: 'Ready'
+                });
+            }
         }
 
-        return success;
+        // Initialize relationship memory
+        await relationshipMemory.initialize();
+
+        return true; // Always return true - we have fallback
     }
 
     isReady() {
-        return webLLMService.isReady();
+        return this.useWebLLM || this.useFallback;
     }
 
     /**
      * Get AI status
      */
     getStatus() {
-        return webLLMService.getStatus();
+        if (this.useWebLLM) {
+            return webLLMService.getStatus();
+        } else {
+            return {
+                initialized: true,
+                loading: false,
+                progress: 100,
+                model: 'Phi-3-mini (Hugging Face)',
+                provider: 'Hugging Face Fallback',
+                ready: true,
+                webGPUSupported: false
+            };
+        }
     }
 
     async generateResponse(messages, context = {}) {
@@ -51,18 +79,19 @@ class CloudLlamaService {
                 ? messages.filter(m => m.role === 'user').pop()?.content
                 : messages;
 
-            if (typeof lastUserMsg === 'string' && webSearchSkill.shouldSearch(lastUserMsg)) {
-                console.log("🌐 Triggering Web Search for:", lastUserMsg);
-                const searchResults = await webSearchSkill.searchAndSummarize(lastUserMsg);
-                if (searchResults) {
-                    searchContext = `\n\n[WEB SEARCH RESULTS]:\n${searchResults}\n(Use this information to answer if relevant, but don't explicitly say "I searched the web" unless asked. Just know it.)`;
-                }
-            }
+            // Disabled web search to avoid CORS errors
+            // if (typeof lastUserMsg === 'string' && webSearchSkill.shouldSearch(lastUserMsg)) {
+            //     console.log("🌐 Triggering Web Search for:", lastUserMsg);
+            //     const searchResults = await webSearchSkill.searchAndSummarize(lastUserMsg);
+            //     if (searchResults) {
+            //         searchContext = `\n\n[WEB SEARCH RESULTS]:\n${searchResults}\n(Use this information to answer if relevant, but don't explicitly say "I searched the web" unless asked. Just know it.)`;
+            //     }
+            // }
 
             // Get relationship context
             const relationshipContext = relationshipMemory.getConversationContext();
 
-            // Build context for WebLLM
+            // Build context for AI
             const aiContext = {
                 userPrefs: context.userPrefs,
                 emotion: context.emotion,
@@ -85,8 +114,15 @@ class CloudLlamaService {
             // Analyze user mood
             const userMood = personalityEngine.analyzeUserMood(lastUserMsg);
 
-            // Generate response using WebLLM (browser-based)
-            const response = await webLLMService.generateResponse(formattedMessages, aiContext);
+            // Generate response using WebLLM or fallback
+            let response;
+
+            if (this.useWebLLM && webLLMService.isReady()) {
+                response = await webLLMService.generateResponse(formattedMessages, aiContext);
+            } else {
+                // Use Hugging Face fallback
+                response = await huggingFaceFallback.generateResponse(formattedMessages, aiContext);
+            }
 
             const aiResponse = response.response;
 

@@ -1,6 +1,6 @@
 /**
- * WebLLM Service
- * Browser-based LLM using WebGPU - completely free, no API keys needed
+ * WebLLM Service with WebGPU Detection and Fallback
+ * Browser-based LLM using WebGPU - with graceful fallback
  */
 
 import * as webllm from "@mlc-ai/web-llm";
@@ -11,8 +11,35 @@ class WebLLMService {
         this.isInitialized = false;
         this.isLoading = false;
         this.loadingProgress = 0;
-        this.modelId = "Llama-3.2-1B-Instruct-q4f16_1-MLC"; // Small, fast model
+        this.modelId = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
         this.onProgressCallback = null;
+        this.webGPUAvailable = false;
+    }
+
+    /**
+     * Check if WebGPU is available
+     */
+    async checkWebGPUSupport() {
+        try {
+            if (!navigator.gpu) {
+                console.warn('⚠️ WebGPU not available in this browser');
+                return false;
+            }
+
+            const adapter = await navigator.gpu.requestAdapter();
+            if (!adapter) {
+                console.warn('⚠️ No WebGPU adapter found');
+                return false;
+            }
+
+            console.log('✅ WebGPU is available!');
+            this.webGPUAvailable = true;
+            return true;
+
+        } catch (error) {
+            console.warn('⚠️ WebGPU check failed:', error);
+            return false;
+        }
     }
 
     /**
@@ -26,6 +53,24 @@ class WebLLMService {
 
         if (this.isLoading) {
             console.log('🧠 WebLLM already loading...');
+            return false;
+        }
+
+        // Check WebGPU support first
+        const hasWebGPU = await this.checkWebGPUSupport();
+
+        if (!hasWebGPU) {
+            console.error('❌ WebGPU not available - WebLLM cannot run');
+            console.log('💡 Falling back to API-based AI...');
+
+            if (onProgress) {
+                onProgress({
+                    progress: 0,
+                    text: 'WebGPU not available - using API fallback',
+                    error: 'WebGPU_NOT_SUPPORTED'
+                });
+            }
+
             return false;
         }
 
@@ -80,7 +125,7 @@ class WebLLMService {
             if (this.onProgressCallback) {
                 this.onProgressCallback({
                     progress: 0,
-                    text: 'Failed to load AI brain',
+                    text: 'Failed to load AI brain - using fallback',
                     error: error.message
                 });
             }
@@ -94,6 +139,13 @@ class WebLLMService {
      */
     isReady() {
         return this.isInitialized && this.engine !== null;
+    }
+
+    /**
+     * Check if WebGPU is supported
+     */
+    isWebGPUSupported() {
+        return this.webGPUAvailable;
     }
 
     /**
@@ -241,7 +293,8 @@ Respond as Phuntroo would - warm, engaged, and present.`;
             progress: this.loadingProgress,
             model: this.modelId,
             provider: 'WebLLM (Browser-Based)',
-            ready: this.isReady()
+            ready: this.isReady(),
+            webGPUSupported: this.webGPUAvailable
         };
     }
 
@@ -250,7 +303,6 @@ Respond as Phuntroo would - warm, engaged, and present.`;
      */
     async reset() {
         if (this.engine) {
-            // WebLLM doesn't have explicit cleanup, just set to null
             this.engine = null;
         }
         this.isInitialized = false;
