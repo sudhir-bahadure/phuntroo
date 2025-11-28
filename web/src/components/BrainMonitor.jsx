@@ -50,10 +50,12 @@ export default function BrainMonitor() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '8px',
-                cursor: 'pointer'
-            }} onClick={() => setIsExpanded(!isExpanded)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                marginBottom: '8px'
+            }}>
+                <div
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', flex: 1 }}
+                    onClick={() => setIsExpanded(!isExpanded)}
+                >
                     <div style={{
                         width: '8px',
                         height: '8px',
@@ -63,15 +65,29 @@ export default function BrainMonitor() {
                     }} />
                     <span style={{ fontWeight: 'bold' }}>🧠 Autonomous Brain</span>
                 </div>
+
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <div
+                    <button
                         onClick={handleSetToken}
                         title="Set GitHub Token"
-                        style={{ fontSize: '14px', cursor: 'pointer' }}
+                        style={{
+                            background: 'rgba(255,255,255,0.1)',
+                            border: '1px solid #666',
+                            borderRadius: '4px',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            padding: '2px 6px',
+                            fontSize: '10px'
+                        }}
                     >
-                        🔑
-                    </div>
-                    <span>{isExpanded ? '▼' : '▶'}</span>
+                        🔑 Set Token
+                    </button>
+                    <span
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        style={{ cursor: 'pointer', padding: '0 4px' }}
+                    >
+                        {isExpanded ? '▼' : '▶'}
+                    </span>
                 </div>
             </div>
 
