@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { autonomousBrain } from '../services/brain/AutonomousBrain';
+import { memorySync } from '../utils/MemorySync';
 
 export default function BrainMonitor() {
     const [status, setStatus] = useState(null);
@@ -18,6 +19,15 @@ export default function BrainMonitor() {
     }, []);
 
     if (!status) return null;
+
+    const handleSetToken = (e) => {
+        e.stopPropagation();
+        const token = window.prompt('Enter GitHub Token for Cloud Sync & Uploads:');
+        if (token) {
+            memorySync.setToken(token);
+            alert('Token saved! Brain can now sync and upload.');
+        }
+    };
 
     return (
         <div style={{
@@ -53,7 +63,16 @@ export default function BrainMonitor() {
                     }} />
                     <span style={{ fontWeight: 'bold' }}>🧠 Autonomous Brain</span>
                 </div>
-                <span>{isExpanded ? '▼' : '▶'}</span>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div
+                        onClick={handleSetToken}
+                        title="Set GitHub Token"
+                        style={{ fontSize: '14px', cursor: 'pointer' }}
+                    >
+                        🔑
+                    </div>
+                    <span>{isExpanded ? '▼' : '▶'}</span>
+                </div>
             </div>
 
             <div style={{ fontSize: '11px', color: '#aaa', marginBottom: '8px' }}>
