@@ -104,8 +104,9 @@ class MemorySync {
                 sha = data.sha;
             }
 
-            // 2. Update the file
-            const content = btoa(JSON.stringify(memory, null, 2));
+            // 2. Update the file (use proper UTF-8 encoding for Unicode support)
+            const jsonString = JSON.stringify(memory, null, 2);
+            const content = btoa(unescape(encodeURIComponent(jsonString)));
             const updateResponse = await fetch(
                 `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${MEMORY_PATH}`,
                 {

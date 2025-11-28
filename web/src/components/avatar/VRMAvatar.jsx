@@ -151,6 +151,40 @@ export const VRMAvatar = ({ visemeIndex, avatarState, url }) => {
                     rightLowerLeg.rotation.x = Math.max(0, -walkCycle) * 0.3;
                 }
             }
+
+            // ==== TALKING GESTURES ====
+            // Animate hands/arms when talking
+            if (avatarState === 'talking') {
+                const gestureSpeed = 2.0;
+                const gestureCycle = Math.sin(t * gestureSpeed);
+
+                const leftUpperArm = humanoid.getNormalizedBoneNode('leftUpperArm');
+                const rightUpperArm = humanoid.getNormalizedBoneNode('rightUpperArm');
+                const leftLowerArm = humanoid.getNormalizedBoneNode('leftLowerArm');
+                const rightLowerArm = humanoid.getNormalizedBoneNode('rightLowerArm');
+                const leftHand = humanoid.getNormalizedBoneNode('leftHand');
+                const rightHand = humanoid.getNormalizedBoneNode('rightHand');
+
+                if (leftUpperArm && rightUpperArm) {
+                    // Subtle arm movements while talking
+                    leftUpperArm.rotation.z = Math.sin(t * 1.5) * 0.15;
+                    rightUpperArm.rotation.z = -Math.sin(t * 1.5) * 0.15;
+                    leftUpperArm.rotation.x = Math.sin(t * 0.8) * 0.1;
+                    rightUpperArm.rotation.x = Math.sin(t * 0.8 + Math.PI) * 0.1;
+                }
+
+                if (leftLowerArm && rightLowerArm) {
+                    // Bend elbows slightly
+                    leftLowerArm.rotation.y = Math.abs(gestureCycle) * 0.2;
+                    rightLowerArm.rotation.y = -Math.abs(gestureCycle) * 0.2;
+                }
+
+                if (leftHand && rightHand) {
+                    // Subtle hand gestures
+                    leftHand.rotation.z = Math.sin(t * 2.0) * 0.1;
+                    rightHand.rotation.z = -Math.sin(t * 2.0) * 0.1;
+                }
+            }
         }
 
         // ==== AUTONOMOUS GAZE & HEAD TRACKING ====

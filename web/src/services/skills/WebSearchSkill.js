@@ -16,17 +16,25 @@ class WebSearchSkill {
         try {
             console.log(`🔍 Searching: "${query}"`);
 
-            // Use DuckDuckGo HTML version via AllOrigins proxy
+            // Use DuckDuckGo HTML version via corsproxy.io (more reliable)
             const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(ddgUrl)}`;
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(ddgUrl)}`;
 
-            const response = await fetch(proxyUrl);
-            const proxyData = await response.json();
+            const response = await fetch(proxyUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/html'
+                }
+            });
 
-            if (!proxyData.contents) return [];
+            if (!response.ok) {
+                console.warn(`Search failed: ${response.status}`);
+                return [];
+            }
 
-            const html = proxyData.contents;
+            const html = await response.text();
             const results = [];
+            let count = 0;
 
             // Split by result body to keep title and snippet together
             const resultBlocks = html.split('class="result__body"');
@@ -68,7 +76,8 @@ class WebSearchSkill {
             return results;
 
         } catch (error) {
-            console.error('Search error:', error);
+            // Silent error handling - don't spam console
+            console.warn('Search unavailable:', error.message);
             return [];
         }
     }
