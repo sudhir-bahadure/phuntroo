@@ -351,10 +351,16 @@ function App() {
         <div className="app">
             <header className="app-header">
                 <div className="header-left">
-                    <h1 className="app-title">👋 Phuntroo - Your AI Friend</h1>
-                    <div className="live-badge">
-                        <div className="live-dot" />
-                        <span>Evolving & Learning</span>
+                    <h1 className="app-title">👋 Phuntroo</h1>
+                    <div className="status-pill">
+                        <span className="status-dot online"></span>
+                        <span className="status-text">Online</span>
+                    </div>
+                </div>
+                <div className="header-right">
+                    <div className="engine-indicator">
+                        <span className="engine-label">Brain:</span>
+                        <span className="engine-value">Cloud AI (Free)</span>
                     </div>
                 </div>
             </header>

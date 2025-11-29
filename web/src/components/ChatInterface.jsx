@@ -65,6 +65,21 @@ export default function ChatInterface({ messages, onSendMessage, onVoiceToggle, 
                     disabled={isProcessing}
                     rows={2}
                 />
+                <button
+                    type="button"
+                    className="attach-button"
+                    onClick={() => document.getElementById('file-upload').click()}
+                    disabled={isProcessing}
+                    title="Attach file"
+                >
+                    📎
+                </button>
+                <input
+                    type="file"
+                    id="file-upload"
+                    style={{ display: 'none' }}
+                    onChange={(e) => console.log('File attached:', e.target.files[0])}
+                />
                 {onVoiceToggle && (
                     <button
                         type="button"
