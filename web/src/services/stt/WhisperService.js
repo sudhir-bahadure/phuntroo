@@ -144,6 +144,9 @@ export class WhisperService {
             // Get the audio data as Float32Array (mono channel)
             const audioData = audioBuffer.getChannelData(0);
 
+            // Close context to release resources
+            await audioContext.close();
+
             return audioData;
         } catch (error) {
             console.error('❌ Error converting audio:', error);

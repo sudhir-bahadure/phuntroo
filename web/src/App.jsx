@@ -90,6 +90,30 @@ function App() {
         initFriend();
     }, []);
 
+    // Unlock Audio System on first interaction (Fixes AudioContext warnings)
+    useEffect(() => {
+        const unlockAudio = () => {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                const ctx = new AudioContext();
+                ctx.resume().then(() => {
+                    ctx.close();
+                    console.log('🔊 Audio System Unlocked');
+                });
+            }
+            document.removeEventListener('click', unlockAudio);
+            document.removeEventListener('keydown', unlockAudio);
+        };
+
+        document.addEventListener('click', unlockAudio);
+        document.addEventListener('keydown', unlockAudio);
+
+        return () => {
+            document.removeEventListener('click', unlockAudio);
+            document.removeEventListener('keydown', unlockAudio);
+        };
+    }, []);
+
     // Autonomous Brain Loop
     useEffect(() => {
         if (!modelReady) return;
@@ -341,7 +365,7 @@ function App() {
                         url="/models/avatar.vrm"
                         avatarState={isTalking ? 'talking' : isProcessing ? 'thinking' : 'idle'}
                         expression={currentEmotion}
-                        visemes={[]}
+                        visemes={ttsService.visemeQueue}
                     />
                 </div>
 

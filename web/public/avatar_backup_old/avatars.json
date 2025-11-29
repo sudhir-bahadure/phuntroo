@@ -1,0 +1,10 @@
+[
+    {
+        "id": "asian_female_casual",
+        "name": "Asian Female (Casual)",
+        "file": "./avatars/avatar.glb",
+        "thumb": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='60' x='20' font-size='60'%3E👩%3C/text%3E%3C/svg%3E",
+        "source": "VALID Library",
+        "notes": "Asian female avatar from University of Central Florida VALID diversity library"
+    }
+]
