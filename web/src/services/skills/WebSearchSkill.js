@@ -18,17 +18,18 @@ class WebSearchSkill {
 
             // Use DuckDuckGo HTML version via corsproxy.io (more reliable)
             const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(ddgUrl)}`;
+            // const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(ddgUrl)}`;
+            // Fallback to allorigins which is often more permissive for simple gets
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(ddgUrl)}`;
 
             const response = await fetch(proxyUrl, {
                 method: 'GET',
-                headers: {
-                    'Accept': 'text/html'
-                }
+                // headers: { 'Accept': 'text/html' } // Remove headers for allorigins
             });
 
             if (!response.ok) {
-                console.warn(`Search failed: ${response.status}`);
+                // Silent fail - don't spam console
+                // console.warn(`Search failed: ${response.status}`);
                 return [];
             }
 

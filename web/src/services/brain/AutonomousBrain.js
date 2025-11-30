@@ -10,7 +10,7 @@ import { memorySync } from '../../utils/MemorySync';
 
 class AutonomousBrain {
     constructor() {
-        this.isActive = true;
+        this.isActive = false; // Disabled by default to prevent error spam
         this.currentGoals = [];
         this.completedTasks = [];
         this.decisionLog = [];
@@ -19,9 +19,11 @@ class AutonomousBrain {
     }
 
     async start() {
-        console.log('🧠 Autonomous Brain activated');
-        this.isActive = true;
+        console.log('🧠 Autonomous Brain initialized (Passive Mode)');
+        // this.isActive = true; 
 
+        // Disabled automatic thinking loop to prevent CORS errors on GitHub Pages
+        /*
         // Think every 30 seconds
         this.thinkingInterval = setInterval(async () => {
             await this.think();
@@ -29,6 +31,7 @@ class AutonomousBrain {
 
         // Initial thought
         await this.think();
+        */
     }
 
     stop() {
