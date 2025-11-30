@@ -35,6 +35,7 @@ function App() {
     const [modelReady, setModelReady] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
     const [loadingStage, setLoadingStage] = useState('Initializing...');
+    const [showAPISettings, setShowAPISettings] = useState(false); // Added missing state
 
     // Initialize Friend Memory & AI
     useEffect(() => {
@@ -78,8 +79,8 @@ function App() {
                 setModelReady(true);
                 setStatus('Ready to chat!');
 
-                // Start autonomous brain
-                autonomousBrain.start();
+                // Start autonomous brain (Disabled for stability)
+                // autonomousBrain.start();
 
                 // Speak greeting
                 ttsService.speak(greeting.content).catch(err => {
