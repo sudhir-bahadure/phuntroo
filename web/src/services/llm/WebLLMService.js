@@ -97,11 +97,22 @@ class WebLLMService {
                 }
             };
 
-            // Create WebLLM engine
-            this.engine = await webllm.CreateMLCEngine(
+            // Create WebLLM engine with timeout
+            // Timeout after 30 seconds - if model hasn't loaded, fallback to API
+            const timeoutMs = 30000; // 30 seconds
+            const enginePromise = webllm.CreateMLCEngine(
                 this.modelId,
                 { initProgressCallback }
             );
+
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error('TIMEOUT: Model loading taking too long. Using instant cloud AI instead.'));
+                }, timeoutMs);
+            });
+
+            // Race between model loading and timeout
+            this.engine = await Promise.race([enginePromise, timeoutPromise]);
 
             this.isInitialized = true;
             this.isLoading = false;
@@ -119,13 +130,14 @@ class WebLLMService {
             return true;
 
         } catch (error) {
-            console.error('❌ WebLLM initialization failed:', error);
+            console.error('❌ WebLLM initialization failed:', error.message);
+            console.log('💡 Switching to instant cloud AI fallback...');
             this.isLoading = false;
 
             if (this.onProgressCallback) {
                 this.onProgressCallback({
                     progress: 0,
-                    text: 'Failed to load AI brain - using fallback',
+                    text: 'Using instant cloud AI (free) ☁️',
                     error: error.message
                 });
             }
