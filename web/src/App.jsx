@@ -54,18 +54,17 @@ function App() {
                 };
                 setMessages([greeting]);
 
-                // Initialize connection to Java Backend
-                setStatus('Connecting to server...');
-                const isBackendReady = await backendService.checkHealth();
+                // Initialize browser-only AI (WebLLM or HuggingFace fallback)
+                setStatus('Initializing AI brain...');
+                await llamaService.initialize((progress) => {
+                    setLoadingProgress(Math.floor(progress.progress * 100));
+                    setLoadingStage(progress.text || 'Loading AI...');
+                });
 
-                if (isBackendReady) {
-                    console.log('✅ Connected to Java Backend');
-                } else {
-                    console.warn('⚠️ Backend not reachable, please ensure Java server is running on port 8080');
-                }
+                console.log('✅ Browser AI ready!');
 
                 setLoadingProgress(100);
-                setLoadingStage('Connected');
+                setLoadingStage('Ready!');
 
                 // Initialize voice services in background
                 whisperService.initialize().catch(err => {
@@ -156,13 +155,22 @@ function App() {
         setStatus('Thinking...');
 
         try {
-            // Call Java Backend
-            const response = await backendService.sendMessage(messageText);
+            // Call browser-only AI
+            const response = await llamaService.generateResponse(messageText, {
+                userPrefs: friendMemory?.userPrefs,
+                emotion: currentEmotion,
+                outfit: currentOutfit
+            });
 
-            const aiResponse = response.reply;
+            const aiResponse = response.response;
             const provider = response.provider;
 
             console.log(`🤖 Response from ${provider}`);
+
+            // Update expression from AI response
+            if (response.expression) {
+                setCurrentEmotion(response.expression);
+            }
 
             // Smart Outfit Change based on conversation topic (Optional, keep if needed)
             // const newOutfit = await getSmartOutfit([...messages, userMessage]);
