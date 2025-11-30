@@ -1,0 +1,15 @@
+com\phuntroo\orchestrator\PhuntrooOrchestratorApplication.class
+com\phuntroo\orchestrator\dto\cohere\CohereRequest$CohereMessage$CohereMessageBuilder.class
+com\phuntroo\orchestrator\dto\ChatResponse$ChatResponseBuilder.class
+com\phuntroo\orchestrator\dto\cohere\CohereRequest$CohereMessage.class
+com\phuntroo\orchestrator\controller\ChatController.class
+com\phuntroo\orchestrator\service\ChatService.class
+com\phuntroo\orchestrator\config\AppConfig.class
+com\phuntroo\orchestrator\dto\ChatResponse.class
+com\phuntroo\orchestrator\client\CohereClient$CohereResponse.class
+com\phuntroo\orchestrator\dto\cohere\CohereRequest.class
+com\phuntroo\orchestrator\client\CohereClient.class
+com\phuntroo\orchestrator\dto\cohere\CohereRequest$CohereRequestBuilder.class
+com\phuntroo\orchestrator\dto\ChatRequest.class
+com\phuntroo\orchestrator\dto\cohere\CohereResponse.class
+com\phuntroo\orchestrator\api\ChatController.class

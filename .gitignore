@@ -52,4 +52,7 @@ public/models/*.gltf
 # Production artifacts
 stats.html
 
+# Development tools (JDK, Maven, etc)
+tools/
+
 AI_SERVICES_GUIDE.md

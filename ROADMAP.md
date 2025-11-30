@@ -192,8 +192,8 @@ PHUNTROO is a browser-rendered, realistic human avatar connected to a multi-engi
 
 ## 9. Milestones & Timeline
 
-**Milestone 1 (Week 1–2):** Front-end scaffold, Avatar rendering, Chat UI (prompt + attach + send).
-**Milestone 2 (Week 3–4):** Java orchestrator with Cohere integration.
+**Milestone 1 (Week 1–2):** ✅ Front-end scaffold, Avatar rendering, Chat UI (prompt + attach + send).
+**Milestone 2 (Week 3–4):** 🔄 Java orchestrator with Cohere integration (Scaffolded).
 **Milestone 3 (Week 5–6):** Python tools service with HF STT/TTS.
 **Milestone 4 (Week 7–8):** Grok integration, GitHub integration.
 **Milestone 5 (Week 9–10):** Hardening, UI polish, Documentation.

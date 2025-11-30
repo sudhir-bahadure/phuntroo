@@ -3,6 +3,7 @@ import Avatar3D from './components/avatar/Avatar3D';
 import ChatInterface from './components/ChatInterface';
 import AutonomyLog from './components/AutonomyLog';
 import { llamaService } from './services/llm/LlamaService';
+import { backendService } from './services/BackendService';
 import { whisperService } from './services/stt/WhisperService';
 import { ttsService } from './services/tts/TTSService';
 import { memorySync } from './utils/MemorySync';
@@ -53,12 +54,18 @@ function App() {
                 };
                 setMessages([greeting]);
 
-                // Initialize AI brain (WebLLM - browser-based)
-                setStatus('Loading AI brain in browser...');
-                await llamaService.initialize((progress) => {
-                    setLoadingProgress(progress.progress * 100);
-                    setLoadingStage(progress.stage || progress.text || 'Loading...');
-                });
+                // Initialize connection to Java Backend
+                setStatus('Connecting to server...');
+                const isBackendReady = await backendService.checkHealth();
+
+                if (isBackendReady) {
+                    console.log('✅ Connected to Java Backend');
+                } else {
+                    console.warn('⚠️ Backend not reachable, please ensure Java server is running on port 8080');
+                }
+
+                setLoadingProgress(100);
+                setLoadingStage('Connected');
 
                 // Initialize voice services in background
                 whisperService.initialize().catch(err => {
@@ -135,7 +142,7 @@ function App() {
 
     // Handle chat messages with friend personality
     const handleSendMessage = async (messageText) => {
-        if (!messageText.trim() || !modelReady) return;
+        if (!messageText.trim()) return;
 
         const userMessage = {
             role: 'user',
@@ -146,71 +153,22 @@ function App() {
 
         setMessages(prev => [...prev, userMessage]);
         setIsProcessing(true);
-        setStatus('Thinking as your friend...');
+        setStatus('Thinking...');
 
         try {
-            // Build friend context from memory
-            const context = friendMemory ? {
-                userPrefs: friendMemory.userPrefs,
-                recentChats: friendMemory.chatHistory.slice(-5),
-                emotion: currentEmotion,
-                outfit: currentOutfit,
-                image: isSeeing ? visionService.captureImage() : null // Capture image if seeing
-            } : {};
+            // Call Java Backend
+            const response = await backendService.sendMessage(messageText);
 
-            // Generate friend response (now returns object with gesture/expression)
-            // Pass full message history for better context
-            const aiResult = await llamaService.generateResponse([...messages, userMessage], context);
+            const aiResponse = response.reply;
+            const provider = response.provider;
 
-            // Extract response (handle both old string format and new object format)
-            let aiResponse = typeof aiResult === 'string' ? aiResult : aiResult.response;
+            console.log(`🤖 Response from ${provider}`);
 
-            // Apply AI-suggested expression and gesture
-            if (typeof aiResult === 'object') {
-                if (aiResult.expression) {
-                    setCurrentEmotion(aiResult.expression);
-                    console.log(`😊 AI Expression: ${aiResult.expression}`);
-                }
-                if (aiResult.gesture) {
-                    // Trigger gesture animation
-                    autonomyManager.setGesture(aiResult.gesture);
-                    console.log(`👋 AI Gesture: ${aiResult.gesture}`);
-                }
-                if (aiResult.provider) {
-                    console.log(`🤖 Provider: ${aiResult.provider}`);
-                }
-            }
-
-            // Parse legacy action tags (for backward compatibility)
-            const actionMatch = aiResponse.match(/\[(action|expression): ([^\]]+)\]/);
-
-            if (actionMatch) {
-                const type = actionMatch[1];
-                const value = actionMatch[2];
-
-                // Remove tag from spoken text
-                aiResponse = aiResponse.replace(/\[(action|expression): [^\]]+\]/g, '').trim();
-
-                console.log(`🤖 Legacy Action: ${type} -> ${value}`);
-
-                if (type === 'action') {
-                    // Map common actions to gestures
-                    if (['wave', 'nod', 'shake', 'clap'].includes(value)) {
-                        autonomyManager.setGesture(value);
-                    } else {
-                        autonomyManager.setAction(value);
-                    }
-                } else if (type === 'expression') {
-                    setCurrentEmotion(value);
-                }
-            }
-
-            // Smart Outfit Change based on conversation topic
-            const newOutfit = await getSmartOutfit([...messages, userMessage]);
-            if (newOutfit && newOutfit.name !== currentOutfit?.name) {
-                console.log(`👗 Changing outfit to: ${newOutfit.name}`);
-                setCurrentOutfit(newOutfit);
-            }
+            // Smart Outfit Change based on conversation topic (Optional, keep if needed)
+            // const newOutfit = await getSmartOutfit([...messages, userMessage]);
+            // if (newOutfit && newOutfit.name !== currentOutfit?.name) {
+            //     setCurrentOutfit(newOutfit);
+            // }
 
             const aiMessage = {
                 role: 'assistant',
@@ -221,18 +179,17 @@ function App() {
 
             setMessages(prev => [...prev, aiMessage]);
 
-            // Update friend memory
+            // Update friend memory (Keep local memory for now)
             if (friendMemory) {
                 const updatedMemory = {
                     ...friendMemory,
-                    chatHistory: [...friendMemory.chatHistory, userMessage, aiMessage].slice(-50), // Keep last 50
+                    chatHistory: [...friendMemory.chatHistory, userMessage, aiMessage].slice(-50),
                     metadata: {
                         ...friendMemory.metadata,
                         lastSync: new Date().toISOString(),
                         totalInteractions: (friendMemory?.metadata?.totalInteractions || 0) + 1
                     }
                 };
-
                 setFriendMemory(updatedMemory);
                 await memorySync.save(updatedMemory);
             }
@@ -251,11 +208,11 @@ function App() {
             console.error('Error generating response:', error);
             const errorResponse = {
                 role: 'assistant',
-                content: `I'm having trouble thinking right now, buddy. Can you try again?`,
+                content: `I'm having trouble connecting to the server. Is it running?`,
                 timestamp: new Date().toISOString()
             };
             setMessages(prev => [...prev, errorResponse]);
-            setStatus('Had a brain hiccup 🤯');
+            setStatus('Connection error 🔌');
         } finally {
             setIsProcessing(false);
         }
