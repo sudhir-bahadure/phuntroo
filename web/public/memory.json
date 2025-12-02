@@ -245,11 +245,23 @@
       "reply": "😱 Oh no, gotta go! *poof* I'm hiding behind a digital wall, don't worry, I'll be here when you need me again! 👋",
       "content": "😱 Oh no, gotta go! *poof* I'm hiding behind a digital wall, don't worry, I'll be here when you need me again! 👋",
       "timestamp": "2025-11-27T17:18:01.290Z"
+    },
+    {
+      "role": "user",
+      "text": "hi",
+      "content": "hi",
+      "timestamp": "2025-12-02T16:56:29.714Z"
+    },
+    {
+      "role": "assistant",
+      "reply": "I'm having some technical difficulties 😅 My brain is still waking up. Can you try again in a moment?",
+      "content": "I'm having some technical difficulties 😅 My brain is still waking up. Can you try again in a moment?",
+      "timestamp": "2025-12-02T16:56:30.157Z"
     }
   ],
   "evolutionLog": "Started as your friend on 2025-11-25",
   "metadata": {
-    "lastSync": "2025-11-27T17:18:01.290Z",
-    "totalInteractions": 20
+    "lastSync": "2025-12-02T16:56:30.157Z",
+    "totalInteractions": 21
   }
 }
