@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: jarvis-brain
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: cd jarvis_companion/backend && pip install -r requirements.txt
+    startCommand: cd jarvis_companion/backend && gunicorn app:app --bind 0.0.0.0:$PORT
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: HF_TOKEN
+        sync: false
